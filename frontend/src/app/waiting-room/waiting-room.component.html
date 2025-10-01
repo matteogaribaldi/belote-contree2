@@ -1,0 +1,110 @@
+<div class="waiting-room-container">
+  <div class="waiting-card">
+    <div class="header">
+      <h2>Sala d'Attesa</h2>
+      <div class="room-code">
+        <span>Codice: <strong>{{ roomCode }}</strong></span>
+        <button class="btn-copy" (click)="copyRoomCode()">📋</button>
+      </div>
+    </div>
+
+    <div class="table-layout" *ngIf="roomState">
+      <div class="position north">
+        <div 
+          class="player-slot"
+          [class.available]="isPositionAvailable('north')"
+          [class.selected]="isMyPosition('north')"
+          (click)="choosePosition('north')"
+        >
+          <div class="position-label">{{ positionLabels['north'] }}</div>
+          <div class="player-name">{{ getPositionDisplay('north') }}</div>
+          <button 
+            *ngIf="isHost() && roomState.players['north'] === null"
+            class="btn-bot"
+            (click)="toggleBot('north'); $event.stopPropagation()"
+          >
+            {{ roomState.bots['north'] ? 'Rimuovi BOT' : 'Aggiungi BOT' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="position west">
+        <div 
+          class="player-slot"
+          [class.available]="isPositionAvailable('west')"
+          [class.selected]="isMyPosition('west')"
+          (click)="choosePosition('west')"
+        >
+          <div class="position-label">{{ positionLabels['west'] }}</div>
+          <div class="player-name">{{ getPositionDisplay('west') }}</div>
+          <button 
+            *ngIf="isHost() && roomState.players['west'] === null"
+            class="btn-bot"
+            (click)="toggleBot('west'); $event.stopPropagation()"
+          >
+            {{ roomState.bots['west'] ? 'Rimuovi BOT' : 'Aggiungi BOT' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="center">
+        <div class="table-center">🃏</div>
+      </div>
+
+      <div class="position east">
+        <div 
+          class="player-slot"
+          [class.available]="isPositionAvailable('east')"
+          [class.selected]="isMyPosition('east')"
+          (click)="choosePosition('east')"
+        >
+          <div class="position-label">{{ positionLabels['east'] }}</div>
+          <div class="player-name">{{ getPositionDisplay('east') }}</div>
+          <button 
+            *ngIf="isHost() && roomState.players['east'] === null"
+            class="btn-bot"
+            (click)="toggleBot('east'); $event.stopPropagation()"
+          >
+            {{ roomState.bots['east'] ? 'Rimuovi BOT' : 'Aggiungi BOT' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="position south">
+        <div 
+          class="player-slot"
+          [class.available]="isPositionAvailable('south')"
+          [class.selected]="isMyPosition('south')"
+          (click)="choosePosition('south')"
+        >
+          <div class="position-label">{{ positionLabels['south'] }}</div>
+          <div class="player-name">{{ getPositionDisplay('south') }}</div>
+          <button 
+            *ngIf="isHost() && roomState.players['south'] === null"
+            class="btn-bot"
+            (click)="toggleBot('south'); $event.stopPropagation()"
+          >
+            {{ roomState.bots['south'] ? 'Rimuovi BOT' : 'Aggiungi BOT' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions" *ngIf="isHost()">
+      <button 
+        class="btn-start"
+        (click)="startGame()"
+        [disabled]="!allPositionsFilled()"
+      >
+        Inizia Partita
+      </button>
+      <p class="hint" *ngIf="!allPositionsFilled()">
+        Tutti i posti devono essere occupati per iniziare
+      </p>
+    </div>
+
+    <div class="waiting-message" *ngIf="!isHost()">
+      <p>In attesa che l'host avvii la partita...</p>
+    </div>
+  </div>
+</div>

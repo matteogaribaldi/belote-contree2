@@ -1,0 +1,204 @@
+<div class="game-container" *ngIf="gameState">
+  <!-- Header con punteggi -->
+  <div class="game-header">
+    <div class="score-panel">
+      <div class="team-score">
+        <h3>Nord-Sud</h3>
+        <div class="score">{{ gameState.score.northSouth }}</div>
+      </div>
+      <div class="contract-info" *ngIf="gameState.contract">
+        <div class="trump">
+          Atout: <span [class]="getCardClass({suit: gameState.trump})">
+            {{ getSuitSymbol(gameState.trump) }} {{ getSuitName(gameState.trump) }}
+          </span>
+        </div>
+        <div class="contract-details">
+          Contratto: {{ gameState.contract.bid.points }} punti
+          <br>
+          <small>{{ getPositionLabel(gameState.contract.player) }}</small>
+        </div>
+      </div>
+      <div class="team-score">
+        <h3>Est-Ovest</h3>
+        <div class="score">{{ gameState.score.eastWest }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fase di puntata -->
+  <div class="bidding-phase" *ngIf="gameState.biddingPhase">
+    <h2>Fase di Puntata</h2>
+    
+    <div class="bids-history" *ngIf="gameState.bids.length > 0">
+      <h3>Puntate:</h3>
+      <div class="bid-list">
+        <div class="bid-item" *ngFor="let bidEntry of gameState.bids">
+          <strong>{{ getPositionLabel(bidEntry.player) }}:</strong>
+          <span *ngIf="bidEntry.bid.type === 'pass'">Passo</span>
+          <span *ngIf="bidEntry.bid.type === 'bid'">
+            {{ bidEntry.bid.points }} - 
+            <span [class]="getCardClass({suit: bidEntry.bid.suit})">
+              {{ getSuitSymbol(bidEntry.bid.suit) }}
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bidding-actions" *ngIf="isMyTurn()">
+      <h3>È il tuo turno!</h3>
+      
+      <div *ngIf="!selectedBid" class="suit-selection">
+        <button 
+          *ngFor="let suit of ['hearts', 'diamonds', 'clubs', 'spades']"
+          class="btn-suit"
+          [class]="getCardClass({suit: suit})"
+          (click)="selectBidSuit(suit)"
+        >
+          {{ getSuitSymbol(suit) }} {{ getSuitName(suit) }}
+        </button>
+      </div>
+
+      <div *ngIf="selectedBid" class="points-selection">
+        <h4>
+          Seme selezionato: 
+          <span [class]="getCardClass({suit: selectedBid.suit})">
+            {{ getSuitSymbol(selectedBid.suit) }}
+          </span>
+        </h4>
+        <div class="points-grid">
+          <button 
+            *ngFor="let points of bidPoints"
+            class="btn-points"
+            [disabled]="!canBidPoints(points)"
+            (click)="placeBid('bid', selectedBid.suit, points)"
+          >
+            {{ points }}
+          </button>
+        </div>
+        <button class="btn-back" (click)="selectedBid = null">Indietro</button>
+      </div>
+
+      <button class="btn-pass" (click)="placeBid('pass')">
+        Passo
+      </button>
+    </div>
+
+    <div class="waiting-bid" *ngIf="!isMyTurn()">
+      <p>Turno di: <strong>{{ getPositionLabel(gameState.currentPlayer) }}</strong></p>
+      <div class="loader"></div>
+    </div>
+    <div class="player-hand-bidding">
+      <h3>Le tue carte</h3>
+      <div class="cards">
+        <div 
+          *ngFor="let card of gameState.hand"
+          class="card"
+          [class]="getCardClass(card)"
+        >
+          <div class="card-rank">{{ card.rank }}</div>
+          <div class="card-suit">{{ getSuitSymbol(card.suit) }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTINUA NELLA PARTE 2... -->
+   <!-- Fase di gioco -->
+  <div class="playing-phase" *ngIf="!gameState.biddingPhase">
+    <!-- Tavolo di gioco -->
+    <div class="game-table">
+      <!-- Trick corrente -->
+      <div class="trick-area">
+        <div 
+          *ngFor="let position of ['north', 'east', 'south', 'west']"
+          class="trick-card"
+          [class]="getTrickPosition(position)"
+          [class.visible]="gameState.currentTrick[position]"
+        >
+          <div class="card" *ngIf="gameState.currentTrick[position]" [class]="getCardClass(gameState.currentTrick[position])">
+            <div class="card-rank">{{ gameState.currentTrick[position].rank }}</div>
+            <div class="card-suit">{{ getSuitSymbol(gameState.currentTrick[position].suit) }}</div>
+          </div>
+          <div class="position-indicator">{{ getPositionLabel(position) }}</div>
+        </div>
+      </div>
+
+      <!-- Ultimo trick -->
+      <div class="last-trick" *ngIf="gameState.lastTrick">
+        <button class="btn-show-last" onclick="this.nextElementSibling.classList.toggle('visible')">
+          Mostra ultimo trick
+        </button>
+        <div class="last-trick-cards">
+          <p>Vincitore: {{ getPositionLabel(gameState.lastTrick.winner) }} ({{ gameState.lastTrick.points }} punti)</p>
+          <div class="mini-cards">
+            <div *ngFor="let position of ['north', 'east', 'south', 'west']" class="mini-card-wrapper">
+              <div class="mini-card" *ngIf="gameState.lastTrick[position]" [class]="getCardClass(gameState.lastTrick[position])">
+                {{ gameState.lastTrick[position].rank }}{{ getSuitSymbol(gameState.lastTrick[position].suit) }}
+              </div>
+              <small>{{ getPositionLabel(position) }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mano del giocatore -->
+    <div class="player-hand">
+      <h3>La tua mano</h3>
+      <div class="cards">
+        <div 
+          *ngFor="let card of gameState.hand"
+          class="card"
+          [class]="getCardClass(card)"
+          [class.playable]="isMyTurn()"
+          (click)="playCard(card)"
+        >
+          <div class="card-rank">{{ card.rank }}</div>
+          <div class="card-suit">{{ getSuitSymbol(card.suit) }}</div>
+        </div>
+      </div>
+      <p class="turn-indicator" *ngIf="isMyTurn()">✨ È il tuo turno! Gioca una carta.</p>
+      <p class="turn-indicator" *ngIf="!isMyTurn()">
+        Turno di: <strong>{{ getPositionLabel(gameState.currentPlayer) }}</strong>
+      </p>
+    </div>
+
+    <!-- Belote-Rebelote -->
+    <div class="belote-notice" *ngIf="gameState.beloteRebelote?.announced">
+      🎉 Belote-Rebelote! +20 punti
+    </div>
+  </div>
+
+  <!-- Fine mano -->
+  <div class="hand-complete" *ngIf="gameState.handComplete">
+    <div class="final-score-card">
+      <h2>Mano Completata!</h2>
+      
+      <div class="final-scores">
+        <div class="final-team">
+          <h3>Nord-Sud</h3>
+          <div class="final-points">{{ gameState.finalScore.northSouth }}</div>
+        </div>
+        <div class="final-team">
+          <h3>Est-Ovest</h3>
+          <div class="final-points">{{ gameState.finalScore.eastWest }}</div>
+        </div>
+      </div>
+
+      <div class="contract-result">
+        <p *ngIf="isContractRespected()">
+          ✅ Contratto rispettato!
+        </p>
+        <p *ngIf="!isContractRespected()">
+          ❌ Contratto fallito!
+        </p>
+      </div>
+
+      <button class="btn-new-hand" onclick="location.reload()">
+        Nuova Mano
+      </button>
+    </div>
+  </div>
+  
+</div>

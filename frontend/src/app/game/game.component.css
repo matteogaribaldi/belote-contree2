@@ -1,0 +1,635 @@
+.game-container {
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.game-header {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.score-panel {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.team-score {
+  text-align: center;
+}
+
+.team-score h3 {
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.score {
+  font-size: 36px;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.contract-info {
+  text-align: center;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.trump {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.contract-details {
+  font-size: 14px;
+}
+
+.red { color: #ff4444; }
+.black { color: #ffffff; }
+
+.bidding-phase {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 30px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.bidding-phase h2 {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.bids-history {
+  margin-bottom: 25px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.bid-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bid-item {
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+}
+
+.bidding-actions h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #4CAF50;
+}
+
+.suit-selection {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.btn-suit {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 20px;
+  font-size: 20px;
+  border-radius: 10px;
+}
+
+.btn-suit:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.btn-suit.red {
+  border: 2px solid #ff4444;
+}
+
+.btn-suit.black {
+  border: 2px solid #ffffff;
+}
+
+.points-selection {
+  margin-bottom: 20px;
+}
+
+.points-selection h4 {
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+
+.points-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.btn-points {
+  background: rgba(76, 175, 80, 0.3);
+  color: white;
+  padding: 15px;
+  font-size: 18px;
+  border-radius: 8px;
+}
+
+.btn-points:hover:not(:disabled) {
+  background: rgba(76, 175, 80, 0.5);
+  transform: scale(1.05);
+}
+
+.btn-points:disabled {
+  opacity: 0.3;
+}
+
+.btn-back {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+}
+
+.btn-pass {
+  background: rgba(255, 152, 0, 0.8);
+  color: white;
+  width: 100%;
+  padding: 15px;
+  font-size: 18px;
+}
+
+.btn-pass:hover {
+  background: rgba(255, 152, 0, 1);
+}
+
+.waiting-bid {
+  text-align: center;
+  padding: 30px;
+}
+
+.loader {
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.playing-phase {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.game-table {
+  background: rgba(34, 139, 34, 0.3);
+  border-radius: 20px;
+  padding: 40px;
+  margin-bottom: 30px;
+  min-height: 400px;
+  position: relative;
+}
+
+.trick-area {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trick-card {
+  position: absolute;
+  transition: all 0.3s;
+}
+
+.trick-card.top {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.trick-card.bottom {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.trick-card.left {
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.trick-card.right {
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.trick-card.visible {
+  animation: cardAppear 0.3s;
+}
+
+@keyframes cardAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.position-indicator {
+  margin-top: 10px;
+  font-size: 12px;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  width: 80px;
+  height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.card.red {
+  color: #ff4444;
+}
+
+.card.black {
+  color: #000000;
+}
+
+.card.playable:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+.card-rank {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.card-suit {
+  font-size: 32px;
+}
+
+.last-trick {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.btn-show-last {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 10px 20px;
+  font-size: 14px;
+}
+
+.last-trick-cards {
+  display: none;
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+}
+
+.last-trick-cards.visible {
+  display: block;
+}
+
+.mini-cards {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.mini-card-wrapper {
+  text-align: center;
+}
+
+.mini-card {
+  background: white;
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.mini-card.red {
+  color: #ff4444;
+}
+
+.mini-card.black {
+  color: #000000;
+}
+
+.player-hand {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 20px;
+}
+
+.player-hand h3 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.cards {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.turn-indicator {
+  text-align: center;
+  font-size: 18px;
+  padding: 10px;
+  background: rgba(76, 175, 80, 0.3);
+  border-radius: 8px;
+}
+
+.belote-notice {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(76, 175, 80, 0.95);
+  padding: 30px 50px;
+  border-radius: 15px;
+  font-size: 24px;
+  font-weight: bold;
+  animation: belotePulse 2s;
+  z-index: 1000;
+}
+
+@keyframes belotePulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.hand-complete {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+
+.final-score-card {
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+}
+
+.final-score-card h2 {
+  color: #1e3c72;
+  margin-bottom: 30px;
+}
+
+.final-scores {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 30px;
+}
+
+.final-team h3 {
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.final-points {
+  font-size: 48px;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.contract-result {
+  margin: 30px 0;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.contract-result p {
+  color: #333;
+}
+
+.btn-new-hand {
+  background: #4CAF50;
+  color: white;
+  padding: 15px 40px;
+  font-size: 18px;
+}
+
+.btn-new-hand:hover {
+  background: #45a049;
+  transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+  .game-table {
+    padding: 20px;
+    min-height: 300px;
+  }
+
+  .trick-area {
+    height: 250px;
+  }
+
+  .card {
+    width: 60px;
+    height: 85px;
+    padding: 10px;
+  }
+
+  .card-rank {
+    font-size: 18px;
+  }
+
+  .card-suit {
+    font-size: 24px;
+  }
+
+  .score {
+    font-size: 28px;
+  }
+
+  .trump {
+    font-size: 18px;
+  }
+}
+
+.player-hand-bidding {
+  margin-top: 30px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.player-hand-bidding h3 {
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+.player-hand-bidding .cards {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.player-hand-bidding .card {
+  cursor: default;
+}
+
+/* Overlay trick completato */
+.trick-complete-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s;
+}
+
+.trick-complete-card {
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 700px;
+  width: 90%;
+  text-align: center;
+}
+
+.trick-complete-card h2 {
+  color: #1e3c72;
+  margin-bottom: 15px;
+  font-size: 28px;
+}
+
+.trick-points {
+  color: #4CAF50;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 30px;
+}
+
+.trick-complete-cards {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.trick-card-display {
+  text-align: center;
+}
+
+.card-large {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  width: 100px;
+  height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  margin-bottom: 10px;
+}
+
+.card-rank-large {
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.card-suit-large {
+  font-size: 48px;
+}
+
+.card-large.red {
+  color: #ff4444;
+}
+
+.card-large.black {
+  color: #000000;
+}
+
+.trick-card-display small {
+  color: #666;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .trick-complete-cards {
+    gap: 10px;
+  }
+  
+  .card-large {
+    width: 70px;
+    height: 100px;
+    padding: 15px;
+  }
+  
+  .card-rank-large {
+    font-size: 24px;
+  }
+  
+  .card-suit-large {
+    font-size: 32px;
+  }
+}

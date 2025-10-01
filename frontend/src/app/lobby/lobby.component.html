@@ -1,0 +1,45 @@
+<div class="lobby-container">
+  <div class="lobby-card">
+    <h1>🃏 Belote Contrée</h1>
+    
+    <div class="input-group">
+      <input 
+        type="text" 
+        [(ngModel)]="playerName" 
+        placeholder="Il tuo nome"
+        maxlength="20"
+        (keyup.enter)="!showJoinForm ? createRoom() : joinRoom()"
+      />
+    </div>
+
+    <div class="button-group" *ngIf="!showJoinForm">
+      <button class="btn-primary" (click)="createRoom()" [disabled]="!playerName.trim()">
+        Crea Partita
+      </button>
+      <button class="btn-secondary" (click)="toggleJoinForm()">
+        Unisciti a Partita
+      </button>
+    </div>
+
+    <div class="join-form" *ngIf="showJoinForm">
+      <div class="input-group">
+        <input 
+          type="text" 
+          [(ngModel)]="roomCode" 
+          placeholder="Codice stanza"
+          maxlength="8"
+          (keyup.enter)="joinRoom()"
+          style="text-transform: uppercase"
+        />
+      </div>
+      <div class="button-group">
+        <button class="btn-primary" (click)="joinRoom()" [disabled]="!playerName.trim() || !roomCode.trim()">
+          Entra
+        </button>
+        <button class="btn-secondary" (click)="toggleJoinForm()">
+          Annulla
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
