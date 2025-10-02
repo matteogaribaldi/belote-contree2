@@ -5,16 +5,18 @@ const cors = require('cors');
 const RoomManager = require('./game/RoomManager');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  credentials: true
+}));
 
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production'
-      ? process.env.FRONTEND_URL || "https://belote-frontend.onrender.com"
-      : "http://localhost:4200",
-    methods: ["GET", "POST"],
-    credentials: true
+    origin: '*',
+    methods: ["GET", "POST", "OPTIONS"],
+    credentials: true,
+    allowedHeaders: ["*"]
   }
 });
 
