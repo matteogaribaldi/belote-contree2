@@ -1,0 +1,29 @@
+services:
+  # Backend Service
+  - type: web
+    name: belote-backend
+    runtime: node
+    env: node
+    region: frankfurt
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+
+  # Frontend Service (Static Site)
+  - type: web
+    name: belote-frontend
+    runtime: static
+    env: static
+    region: frankfurt
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist/belote-frontend/browser
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
