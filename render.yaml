@@ -19,7 +19,6 @@ services:
     name: belote-frontend
     runtime: static
     env: static
-    plan: free
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: ./frontend/dist/belote-frontend/browser
     routes:
