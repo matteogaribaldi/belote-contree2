@@ -632,4 +632,46 @@
   .card-suit-large {
     font-size: 32px;
   }
+
+  .confirmation-status {
+  margin: 20px 0;
+  padding: 10px;
+  background: rgba(76, 175, 80, 0.2);
+  border-radius: 8px;
+}
+
+.confirmation-status p {
+  color: #333;
+  font-weight: bold;
+  font-size: 16px;
+  margin: 0;
+}
+
+.btn-confirm {
+  background: #4CAF50;
+  color: white;
+  padding: 15px 40px;
+  font-size: 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin: 10px 0;
+}
+
+.btn-confirm:hover:not(:disabled) {
+  background: #45a049;
+  transform: scale(1.05);
+}
+
+.btn-confirm:disabled {
+  background: #95d897;
+  cursor: not-allowed;
+}
+
+.waiting-text {
+  color: #666;
+  font-size: 14px;
+  margin-top: 10px;
+  font-style: italic;
+}
 }

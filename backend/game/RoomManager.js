@@ -123,20 +123,23 @@ class RoomManager {
   initializeGame(room) {
   const hands = this.deck.deal();
   
-  room.game = {
-    hands: hands,
-    currentPlayer: 'north',
-    dealer: 'west',
-    biddingPhase: true,
-    bids: [],
-    contract: null,
-    trump: null,
-    currentTrick: {},
-    tricks: [],
-    score: { northSouth: 0, eastWest: 0 },
-    beloteRebelote: null,
-    lastTrick: null
-  };
+room.game = {
+  hands: hands,
+  currentPlayer: 'north',
+  dealer: 'west',
+  biddingPhase: true,
+  bids: [],
+  contract: null,
+  trump: null,
+  currentTrick: {},
+  tricks: [],
+  score: { northSouth: 0, eastWest: 0 },
+  beloteRebelote: null,
+  lastTrick: null,
+  trickConfirmations: null,
+  waitingForConfirmation: false,
+  isLastTrick: false               // AGGIUNGI QUESTO
+};
   
   // Ordina le carte DOPO aver inizializzato room.game
   this.sortHands(hands, null);
@@ -188,7 +191,7 @@ class RoomManager {
     this.broadcastGameState(room.code);
     
     if (this.isBot(room, room.game.currentPlayer)) {
-      setTimeout(() => this.botPlay(room, room.game.currentPlayer), 1500);
+      setTimeout(() => this.botPlay(room, room.game.currentPlayer), 1000);
     }
     return;
   }
@@ -278,41 +281,88 @@ playCard(socket, roomCode, card, botPosition = null) {
 
   // Se il prossimo è un bot
   if (this.isBot(room, room.game.currentPlayer)) {
-    setTimeout(() => this.botPlay(room, room.game.currentPlayer), 2500);  // <-- CAMBIATO
+    setTimeout(() => this.botPlay(room, room.game.currentPlayer), 2000);  // <-- CAMBIATO
   }
 }
   }
 
-  completeTrick(room) {
-    const leadPlayer = Object.keys(room.game.currentTrick)[0];
-    const leadCard = room.game.currentTrick[leadPlayer];
-    const winner = this.gameLogic.determineWinner(room.game.currentTrick, room.game.trump, leadCard.suit);
-    const points = this.gameLogic.calculateTrickPoints(room.game.currentTrick, room.game.trump);
-
-    room.game.lastTrick = { ...room.game.currentTrick, winner, points };
-    room.game.tricks.push({ trick: room.game.currentTrick, winner, points });
-
-    if (winner === 'north' || winner === 'south') {
-      room.game.score.northSouth += points;
-    } else {
-      room.game.score.eastWest += points;
-    }
-
-    room.game.currentTrick = {};
-    room.game.currentPlayer = winner;
-
-    const handsEmpty = Object.values(room.game.hands).every(hand => hand.length === 0);
+completeTrick(room) {
+  console.log('=== COMPLETE TRICK CHIAMATO ===');
+  console.log('Trick corrente:', room.game.currentTrick);
     
-    if (handsEmpty) {
+  const leadPlayer = Object.keys(room.game.currentTrick)[0];
+  const leadCard = room.game.currentTrick[leadPlayer];
+  const winner = this.gameLogic.determineWinner(room.game.currentTrick, room.game.trump, leadCard.suit);
+  const points = this.gameLogic.calculateTrickPoints(room.game.currentTrick, room.game.trump);
+
+  room.game.lastTrick = { ...room.game.currentTrick, winner, points };
+  room.game.tricks.push({ trick: room.game.currentTrick, winner, points });
+
+  if (winner === 'north' || winner === 'south') {
+    room.game.score.northSouth += points;
+  } else {
+    room.game.score.eastWest += points;
+  }
+
+  // Controlla se è l'ultimo trick (mani vuote)
+  const handsEmpty = Object.values(room.game.hands).every(hand => hand.length === 0);
+  console.log('Mani vuote?', handsEmpty);
+
+  // Inizializza sistema di conferma trick
+  room.game.trickConfirmations = {
+    north: this.isBot(room, 'north'),
+    east: this.isBot(room, 'east'),
+    south: this.isBot(room, 'south'),
+    west: this.isBot(room, 'west')
+  };
+  room.game.waitingForConfirmation = true;
+  room.game.isLastTrick = handsEmpty;
+
+  console.log('waitingForConfirmation:', room.game.waitingForConfirmation);
+  console.log('isLastTrick:', room.game.isLastTrick);
+  console.log('trickConfirmations:', room.game.trickConfirmations);
+
+  this.broadcastGameState(room.code);
+  console.log('=== FINE COMPLETE TRICK ===');
+}
+
+confirmTrick(socket, roomCode, botPosition = null) {
+  const room = this.rooms.get(roomCode);
+  if (!room || !room.game || !room.game.waitingForConfirmation) return;
+
+  const position = botPosition || this.getPlayerPosition(room, socket.id);
+  if (!position) return;
+
+  // Marca questa posizione come confermata
+  room.game.trickConfirmations[position] = true;
+
+  // Controlla se tutti hanno confermato
+  const allConfirmed = Object.values(room.game.trickConfirmations).every(c => c === true);
+
+  if (allConfirmed) {
+    // Tutti hanno confermato, continua il gioco
+    room.game.waitingForConfirmation = false;
+    
+    // Se era l'ultimo trick, termina la mano
+    if (room.game.isLastTrick) {
       this.endHand(room);
     } else {
+      // Altrimenti continua con il prossimo trick
+      room.game.currentTrick = {};
+      room.game.currentPlayer = room.game.lastTrick.winner;
+      
       this.broadcastGameState(room.code);
 
-      if (this.isBot(room, winner)) {
-        setTimeout(() => this.botPlay(room, winner), 3000);
+      // Se il vincitore è un bot, fallo giocare
+      if (this.isBot(room, room.game.currentPlayer)) {
+        setTimeout(() => this.botPlay(room, room.game.currentPlayer), 1500);
       }
     }
+  } else {
+    // Broadcast per aggiornare lo stato delle conferme
+    this.broadcastGameState(room.code);
   }
+}
 
   endHand(room) {
     const lastTrick = room.game.tricks[room.game.tricks.length - 1];
@@ -422,7 +472,7 @@ playCard(socket, roomCode, card, botPosition = null) {
           if (room.game.biddingPhase) {
             setTimeout(() => this.botBid(room, position), 1000);
           } else {
-            setTimeout(() => this.botPlay(room, position), 1500);
+            setTimeout(() => this.botPlay(room, position), 1000);
           }
         }
       } else {
@@ -496,7 +546,11 @@ playCard(socket, roomCode, card, botPosition = null) {
         lastTrick: room.game.lastTrick,
         beloteRebelote: room.game.beloteRebelote,
         handComplete: room.game.handComplete,
-        finalScore: room.game.finalScore
+        finalScore: room.game.finalScore,
+        waitingForConfirmation: room.game.waitingForConfirmation,  // AGGIUNGI QUESTA
+        trickConfirmations: room.game.trickConfirmations,          // AGGIUNGI QUESTA
+        isLastTrick: room.game.isLastTrick                         // AGGIUNGI QUESTA
+
       };
 
       this.io.to(socketId).emit('gameState', gameState);

@@ -44,6 +44,10 @@ export class SocketService {
     this.socket.emit('playCard', { roomCode, card });
   }
 
+  confirmTrick(roomCode: string) {
+    this.socket.emit('confirmTrick', { roomCode });
+  }
+
   onRoomCreated(): Observable<any> {
     return new Observable(observer => {
       this.socket.on('roomCreated', (data) => observer.next(data));

@@ -16,6 +16,7 @@ export class GameComponent implements OnInit, OnDestroy {
   gameState: any = null;
   selectedBid: any = null;
   showTrickOverlay = false;
+  showTrickConfirmation = false; 
 
   suitSymbols: any = {
     hearts: '♥',
@@ -43,24 +44,29 @@ export class GameComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.roomCode = this.route.snapshot.params['code'];
 
-    this.subscriptions.push(
+this.subscriptions.push(
   this.socketService.onGameState().subscribe(state => {
-    const previousTrick = this.gameState?.lastTrick;
-    const newTrick = state.lastTrick;
+    console.log('=== GAME STATE RICEVUTO ===');
+    console.log('waitingForConfirmation:', state.waitingForConfirmation);
+    console.log('lastTrick:', state.lastTrick);
+    console.log('showTrickConfirmation PRIMA:', this.showTrickConfirmation);
     
+    const previousState = this.gameState;
     this.gameState = state;
     
-    // Se c'è un nuovo trick completato, mostra l'overlay
-    if (newTrick && (!previousTrick || JSON.stringify(newTrick) !== JSON.stringify(previousTrick))) {
-      this.showTrickOverlay = true;
-      
-      // Nascondi dopo 2 secondi
-      setTimeout(() => {
-        this.showTrickOverlay = false;
-      }, 2000);
+    if (state.waitingForConfirmation) {
+      console.log('Dovrebbe mostrare popup!');
+      this.showTrickConfirmation = true;
+    } else {
+      console.log('Non mostra popup');
+      this.showTrickConfirmation = false;
     }
+    
+    console.log('showTrickConfirmation DOPO:', this.showTrickConfirmation);
+    console.log('=== FINE GAME STATE ===');
   })
 );
+
   }
 
   ngOnDestroy() {
@@ -147,4 +153,21 @@ export class GameComponent implements OnInit, OnDestroy {
     const contractTeam = this.getContractTeam();
     return this.gameState.finalScore[contractTeam] >= this.gameState.contract.bid.points;
   }
+  confirmTrick() {
+  this.socketService.confirmTrick(this.roomCode);
+}
+
+hasConfirmed(): boolean {
+  if (!this.gameState?.trickConfirmations) return false;
+  return this.gameState.trickConfirmations[this.gameState.position] === true;
+}
+
+getConfirmationStatus(): string {
+  if (!this.gameState?.trickConfirmations) return '';
+  
+  const confirmed = Object.values(this.gameState.trickConfirmations).filter((c: any) => c === true).length;
+  const total = 4;
+  
+  return `${confirmed}/${total} giocatori pronti`;
+}
 }

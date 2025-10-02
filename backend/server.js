@@ -48,6 +48,10 @@ io.on('connection', (socket) => {
     roomManager.playCard(socket, roomCode, card);
   });
 
+  socket.on('confirmTrick', ({ roomCode }) => {
+  roomManager.confirmTrick(socket, roomCode);
+});
+
   socket.on('disconnect', () => {
     console.log('Client disconnesso:', socket.id);
     roomManager.handleDisconnect(socket);
