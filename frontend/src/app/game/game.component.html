@@ -200,37 +200,9 @@
       </button>
     </div>
   </div>
-  <!-- Overlay conferma trick -->
-  <div class="trick-complete-overlay" *ngIf="showTrickConfirmation && gameState.lastTrick">
-    <div class="trick-complete-card">
-      <h2>🏆 Trick vinto da {{ getPositionLabel(gameState.lastTrick.winner) }}</h2>
-      <p class="trick-points">+{{ gameState.lastTrick.points }} punti</p>
-      
-      <div class="trick-complete-cards">
-        <div *ngFor="let position of ['north', 'east', 'south', 'west']" class="trick-card-display">
-          <div class="card-large" *ngIf="gameState.lastTrick[position]" [class]="getCardClass(gameState.lastTrick[position])">
-            <div class="card-rank-large">{{ gameState.lastTrick[position].rank }}</div>
-            <div class="card-suit-large">{{ getSuitSymbol(gameState.lastTrick[position].suit) }}</div>
-          </div>
-          <small>{{ getPositionLabel(position) }}</small>
-        </div>
-      </div>
-
-      <div class="confirmation-status">
-        <p>{{ getConfirmationStatus() }}</p>
-      </div>
-
-      <button 
-        class="btn-confirm" 
-        (click)="confirmTrick()"
-        [disabled]="hasConfirmed()"
-      >
-        {{ hasConfirmed() ? '✓ Confermato' : 'OK - Continua' }}
-      </button>
-
-      <p class="waiting-text" *ngIf="hasConfirmed()">
-        In attesa degli altri giocatori...
-      </p>
-    </div>
+  <!-- Winner announcement -->
+  <div class="winner-announcement" *ngIf="showWinnerAnnouncement">
+    <div class="winner-name">{{ getPositionLabel(gameState.lastTrick?.winner) }}</div>
+    <div class="winner-points">+{{ gameState.lastTrick?.points }} punti</div>
   </div>
 </div>

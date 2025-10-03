@@ -16,7 +16,7 @@ export class GameComponent implements OnInit, OnDestroy {
   gameState: any = null;
   selectedBid: any = null;
   showTrickOverlay = false;
-  showTrickConfirmation = false; 
+  showWinnerAnnouncement = false; 
 
   suitSymbols: any = {
     hearts: '♥',
@@ -46,24 +46,22 @@ export class GameComponent implements OnInit, OnDestroy {
 
 this.subscriptions.push(
   this.socketService.onGameState().subscribe(state => {
-    console.log('=== GAME STATE RICEVUTO ===');
-    console.log('waitingForConfirmation:', state.waitingForConfirmation);
-    console.log('lastTrick:', state.lastTrick);
-    console.log('showTrickConfirmation PRIMA:', this.showTrickConfirmation);
-    
     const previousState = this.gameState;
     this.gameState = state;
-    
-    if (state.waitingForConfirmation) {
-      console.log('Dovrebbe mostrare popup!');
-      this.showTrickConfirmation = true;
-    } else {
-      console.log('Non mostra popup');
-      this.showTrickConfirmation = false;
+
+    // Mostra animazione vincitore quando un trick è completo (4 carte sul tavolo)
+    const trickComplete = Object.keys(state.currentTrick).length === 4;
+    const previousTrickComplete = previousState && Object.keys(previousState.currentTrick || {}).length === 4;
+
+    if (trickComplete && !previousTrickComplete) {
+      // Nuovo trick completo, mostra animazione
+      this.showWinnerAnnouncement = true;
+
+      // Nascondi l'annuncio dopo 2 secondi
+      setTimeout(() => {
+        this.showWinnerAnnouncement = false;
+      }, 2000);
     }
-    
-    console.log('showTrickConfirmation DOPO:', this.showTrickConfirmation);
-    console.log('=== FINE GAME STATE ===');
   })
 );
 
@@ -175,21 +173,4 @@ this.subscriptions.push(
     const contractTeam = this.getContractTeam();
     return this.gameState.finalScore[contractTeam] >= this.gameState.contract.bid.points;
   }
-  confirmTrick() {
-  this.socketService.confirmTrick(this.roomCode);
-}
-
-hasConfirmed(): boolean {
-  if (!this.gameState?.trickConfirmations) return false;
-  return this.gameState.trickConfirmations[this.gameState.position] === true;
-}
-
-getConfirmationStatus(): string {
-  if (!this.gameState?.trickConfirmations) return '';
-  
-  const confirmed = Object.values(this.gameState.trickConfirmations).filter((c: any) => c === true).length;
-  const total = 4;
-  
-  return `${confirmed}/${total} giocatori pronti`;
-}
 }

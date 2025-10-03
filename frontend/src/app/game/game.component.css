@@ -535,149 +535,60 @@
   cursor: default;
 }
 
-/* Overlay trick completato */
-.trick-complete-overlay {
+/* Winner announcement */
+.winner-announcement {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  animation: fadeIn 0.3s;
-}
-
-.trick-complete-card {
-  background: rgba(255, 255, 255, 0.95);
-  color: #333;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(76, 175, 80, 0.95);
+  padding: 40px 60px;
   border-radius: 20px;
-  padding: 40px;
-  max-width: 700px;
-  width: 90%;
   text-align: center;
+  z-index: 2000;
+  animation: winnerPulse 2s ease-in-out;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
-.trick-complete-card h2 {
-  color: #1e3c72;
-  margin-bottom: 15px;
-  font-size: 28px;
-}
-
-.trick-points {
-  color: #4CAF50;
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 30px;
-}
-
-.trick-complete-cards {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.trick-card-display {
-  text-align: center;
-}
-
-.card-large {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  width: 100px;
-  height: 140px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-  margin-bottom: 10px;
-}
-
-.card-rank-large {
-  font-size: 32px;
-  font-weight: bold;
-}
-
-.card-suit-large {
+.winner-name {
   font-size: 48px;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 15px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.card-large.red {
-  color: #ff4444;
+.winner-points {
+  font-size: 28px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: bold;
 }
 
-.card-large.black {
-  color: #000000;
-}
-
-.trick-card-display small {
-  color: #666;
-  font-size: 14px;
+@keyframes winnerPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
 }
 
 @media (max-width: 768px) {
-  .trick-complete-cards {
-    gap: 10px;
-  }
-  
-  .card-large {
-    width: 70px;
-    height: 100px;
-    padding: 15px;
-  }
-  
-  .card-rank-large {
-    font-size: 24px;
-  }
-  
-  .card-suit-large {
-    font-size: 32px;
+  .winner-announcement {
+    padding: 30px 40px;
   }
 
-  .confirmation-status {
-  margin: 20px 0;
-  padding: 10px;
-  background: rgba(76, 175, 80, 0.2);
-  border-radius: 8px;
-}
+  .winner-name {
+    font-size: 36px;
+  }
 
-.confirmation-status p {
-  color: #333;
-  font-weight: bold;
-  font-size: 16px;
-  margin: 0;
-}
-
-.btn-confirm {
-  background: #4CAF50;
-  color: white;
-  padding: 15px 40px;
-  font-size: 18px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s;
-  margin: 10px 0;
-}
-
-.btn-confirm:hover:not(:disabled) {
-  background: #45a049;
-  transform: scale(1.05);
-}
-
-.btn-confirm:disabled {
-  background: #95d897;
-  cursor: not-allowed;
-}
-
-.waiting-text {
-  color: #666;
-  font-size: 14px;
-  margin-top: 10px;
-  font-style: italic;
-}
+  .winner-points {
+    font-size: 22px;
+  }
 }
