@@ -228,4 +228,21 @@ this.subscriptions.push(
       return myPosition === 'east' || myPosition === 'west';
     }
   }
+
+  nextHand() {
+    this.socketService.nextHand(this.roomCode);
+  }
+
+  goHome() {
+    window.location.href = '/';
+  }
+
+  isDealer(position: string): boolean {
+    return this.gameState?.dealer === position;
+  }
+
+  getWinnerTeamName(): string {
+    if (!this.gameState?.winner) return '';
+    return this.getTeamNames(this.gameState.winner);
+  }
 }

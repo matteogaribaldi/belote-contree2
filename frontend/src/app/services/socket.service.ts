@@ -45,6 +45,10 @@ export class SocketService {
     this.socket.emit('playCard', { roomCode, card });
   }
 
+  nextHand(roomCode: string) {
+    this.socket.emit('nextHand', roomCode);
+  }
+
   getActiveRooms() {
     this.socket.emit('getActiveRooms');
   }

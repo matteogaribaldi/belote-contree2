@@ -679,3 +679,264 @@
   background: rgba(156, 39, 176, 0.9);
   color: white;
 }
+
+/* Hand score indicator */
+.hand-score {
+  display: block;
+  margin-top: 8px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Dealer badge */
+.dealer-badge {
+  display: inline-block;
+  background: #FFD700;
+  color: #000;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 50%;
+  margin-right: 5px;
+  font-size: 10px;
+}
+
+/* Game over screen */
+.game-over {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.victory-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  padding: 50px;
+  max-width: 600px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.5s;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.victory-card h1 {
+  color: white;
+  margin-bottom: 20px;
+  font-size: 36px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.victory-image {
+  margin-bottom: 20px;
+  animation: bounceIn 1s;
+}
+
+.subject-img {
+  max-width: 200px;
+  height: auto;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.winner-announcement-big {
+  margin-bottom: 30px;
+}
+
+.winner-announcement-big h2 {
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 15px;
+  font-size: 24px;
+}
+
+.winner-team {
+  color: #FFD700;
+  font-size: 32px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  margin-bottom: 10px;
+}
+
+.final-game-scores {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 40px;
+  gap: 20px;
+}
+
+.final-game-scores .final-team {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 15px;
+  flex: 1;
+  transition: all 0.3s;
+}
+
+.final-game-scores .final-team.winner {
+  background: rgba(255, 215, 0, 0.3);
+  border: 3px solid #FFD700;
+  transform: scale(1.05);
+}
+
+.final-game-scores .final-team h3 {
+  color: white;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.final-game-scores .final-points {
+  font-size: 56px;
+  font-weight: bold;
+  color: white;
+}
+
+.final-game-scores .final-team.winner .final-points {
+  color: #FFD700;
+}
+
+/* Hand history */
+.hand-history {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 30px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.hand-history h3 {
+  color: white;
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  font-size: 14px;
+}
+
+.hand-number {
+  font-weight: bold;
+  min-width: 80px;
+}
+
+.hand-contract {
+  font-size: 18px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.hand-scores {
+  font-weight: bold;
+  min-width: 80px;
+  text-align: right;
+}
+
+.btn-home {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: 2px solid white;
+  color: white;
+  padding: 15px 50px;
+  font-size: 20px;
+  font-weight: bold;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-home:hover {
+  transform: scale(1.1);
+  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3);
+}
+
+/* Update final-score-card for hand complete */
+.final-score-card small {
+  display: block;
+  margin-top: 10px;
+  color: #666;
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .victory-card {
+    padding: 30px;
+  }
+
+  .victory-card h1 {
+    font-size: 28px;
+  }
+
+  .winner-team {
+    font-size: 24px;
+  }
+
+  .final-game-scores {
+    flex-direction: column;
+  }
+
+  .final-game-scores .final-points {
+    font-size: 42px;
+  }
+
+  .hand-history {
+    max-height: 200px;
+  }
+
+  .history-item {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .hand-number, .hand-contract, .hand-scores {
+    min-width: auto;
+    text-align: center;
+  }
+}

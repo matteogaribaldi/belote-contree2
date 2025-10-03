@@ -4,7 +4,8 @@
     <div class="score-panel">
       <div class="team-score" [class.my-team]="isMyTeam('northSouth')">
         <h3>{{ getTeamNames('northSouth') }}</h3>
-        <div class="score">{{ gameState.score.northSouth }}</div>
+        <div class="score">{{ gameState.gameScore.northSouth }}</div>
+        <small class="hand-score" *ngIf="!gameState.biddingPhase">(Mano: {{ gameState.score.northSouth }})</small>
       </div>
       <div class="contract-info" *ngIf="gameState.contract">
         <div class="trump">
@@ -20,7 +21,8 @@
       </div>
       <div class="team-score" [class.my-team]="isMyTeam('eastWest')">
         <h3>{{ getTeamNames('eastWest') }}</h3>
-        <div class="score">{{ gameState.score.eastWest }}</div>
+        <div class="score">{{ gameState.gameScore.eastWest }}</div>
+        <small class="hand-score" *ngIf="!gameState.biddingPhase">(Mano: {{ gameState.score.eastWest }})</small>
       </div>
     </div>
   </div>
@@ -139,7 +141,10 @@
             <div class="card-rank">{{ gameState.currentTrick[position].rank }}</div>
             <div class="card-suit">{{ getSuitSymbol(gameState.currentTrick[position].suit) }}</div>
           </div>
-          <div class="position-indicator" [class.current-turn]="position === gameState.currentPlayer" [class.my-position]="position === gameState.position">{{ getPositionLabel(position) }}</div>
+          <div class="position-indicator" [class.current-turn]="position === gameState.currentPlayer" [class.my-position]="position === gameState.position">
+            <span *ngIf="isDealer(position)" class="dealer-badge">D</span>
+            {{ getPositionLabel(position) }}
+          </div>
         </div>
       </div>
 
@@ -190,18 +195,20 @@
   </div>
 
   <!-- Fine mano -->
-  <div class="hand-complete" *ngIf="gameState.handComplete">
+  <div class="hand-complete" *ngIf="gameState.handComplete && !gameState.gameOver">
     <div class="final-score-card">
       <h2>Mano Completata!</h2>
-      
+
       <div class="final-scores">
         <div class="final-team">
           <h3>{{ getTeamNames('northSouth') }}</h3>
-          <div class="final-points">{{ gameState.finalScore.northSouth }}</div>
+          <div class="final-points">+{{ gameState.finalScore.northSouth }}</div>
+          <small>Totale: {{ gameState.gameScore.northSouth }}</small>
         </div>
         <div class="final-team">
           <h3>{{ getTeamNames('eastWest') }}</h3>
-          <div class="final-points">{{ gameState.finalScore.eastWest }}</div>
+          <div class="final-points">+{{ gameState.finalScore.eastWest }}</div>
+          <small>Totale: {{ gameState.gameScore.eastWest }}</small>
         </div>
       </div>
 
@@ -214,8 +221,50 @@
         </p>
       </div>
 
-      <button class="btn-new-hand" onclick="location.reload()">
+      <button class="btn-new-hand" (click)="nextHand()">
         Nuova Mano
+      </button>
+    </div>
+  </div>
+
+  <!-- Fine partita - Vittoria a 701 -->
+  <div class="game-over" *ngIf="gameState.gameOver">
+    <div class="victory-card">
+      <h1>🎉 Partita Terminata! 🎉</h1>
+
+      <div class="victory-image">
+        <img src="/img/Subject.png" alt="Victory" class="subject-img">
+      </div>
+
+      <div class="winner-announcement-big">
+        <h2>Vincitori:</h2>
+        <h3 class="winner-team">{{ getWinnerTeamName() }}</h3>
+      </div>
+
+      <div class="final-game-scores">
+        <div class="final-team" [class.winner]="gameState.winner === 'northSouth'">
+          <h3>{{ getTeamNames('northSouth') }}</h3>
+          <div class="final-points">{{ gameState.gameScore.northSouth }}</div>
+        </div>
+        <div class="final-team" [class.winner]="gameState.winner === 'eastWest'">
+          <h3>{{ getTeamNames('eastWest') }}</h3>
+          <div class="final-points">{{ gameState.gameScore.eastWest }}</div>
+        </div>
+      </div>
+
+      <div class="hand-history" *ngIf="gameState.handHistory && gameState.handHistory.length > 0">
+        <h3>Storico Mani</h3>
+        <div class="history-list">
+          <div class="history-item" *ngFor="let hand of gameState.handHistory">
+            <span class="hand-number">Mano {{ hand.handNumber }}</span>
+            <span class="hand-contract">{{ hand.contract.bid.points }} {{ getSuitSymbol(hand.contract.bid.suit) }}</span>
+            <span class="hand-scores">{{ hand.finalScore.northSouth }} - {{ hand.finalScore.eastWest }}</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-home" (click)="goHome()">
+        Torna alla Home
       </button>
     </div>
   </div>

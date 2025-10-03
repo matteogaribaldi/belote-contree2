@@ -10,6 +10,7 @@ class RoomManager {
     this.deck = new Deck();
     this.gameLogic = new GameLogic();
     this.botPlayer = new BotPlayer(this.gameLogic);
+    this.dealerRotation = ['north', 'east', 'south', 'west'];
   }
 
   generateRoomCode() {
@@ -36,7 +37,9 @@ class RoomManager {
       },
       playerNames: {},
       state: 'waiting',
-      game: null
+      game: null,
+      gameScore: { northSouth: 0, eastWest: 0 },
+      handHistory: []
     };
 
     this.rooms.set(roomCode, room);
@@ -124,13 +127,28 @@ class RoomManager {
     console.log(`Partita iniziata nella stanza ${roomCode}`);
   }
 
-  initializeGame(room) {
+  initializeGame(room, isNewHand = false) {
   const hands = this.deck.deal();
-  
+
+  // Determina il dealer
+  let dealer, firstPlayer;
+  if (!isNewHand || !room.game) {
+    // Prima mano della partita
+    dealer = 'west';
+    firstPlayer = 'north';
+  } else {
+    // Mano successiva - ruota il dealer
+    const currentDealerIndex = this.dealerRotation.indexOf(room.game.dealer);
+    const nextDealerIndex = (currentDealerIndex + 1) % 4;
+    dealer = this.dealerRotation[nextDealerIndex];
+    // Il primo giocatore è quello dopo il dealer
+    firstPlayer = this.dealerRotation[(nextDealerIndex + 1) % 4];
+  }
+
 room.game = {
   hands: hands,
-  currentPlayer: 'north',
-  dealer: 'west',
+  currentPlayer: firstPlayer,
+  dealer: dealer,
   biddingPhase: true,
   bids: [],
   contract: null,
@@ -144,16 +162,18 @@ room.game = {
   waitingForConfirmation: false,
   isLastTrick: false,
   contro: false,
-  surcontre: false
+  surcontre: false,
+  gameOver: false,
+  winner: null
 };
-  
+
   // Ordina le carte DOPO aver inizializzato room.game
   this.sortHands(hands, null);
 
   this.broadcastGameState(room.code);
-  
-  if (this.isBot(room, 'north')) {
-    setTimeout(() => this.botBid(room, 'north'), 1000);
+
+  if (this.isBot(room, firstPlayer)) {
+    setTimeout(() => this.botBid(room, firstPlayer), 1000);
   }
 }
 
@@ -435,7 +455,40 @@ completeTrick(room) {
     room.game.finalScore = finalScore;
     room.game.handComplete = true;
 
+    // Aggiungi i punti della mano al punteggio totale della partita
+    room.gameScore.northSouth += finalScore.northSouth;
+    room.gameScore.eastWest += finalScore.eastWest;
+
+    // Salva lo storico della mano
+    room.handHistory.push({
+      handNumber: room.handHistory.length + 1,
+      contract: room.game.contract,
+      finalScore: finalScore,
+      winner: finalScore.northSouth > finalScore.eastWest ? 'northSouth' : 'eastWest',
+      gameScore: { ...room.gameScore }
+    });
+
+    // Controlla se qualcuno ha raggiunto 701 punti
+    if (room.gameScore.northSouth >= 701 || room.gameScore.eastWest >= 701) {
+      room.game.gameOver = true;
+      room.game.winner = room.gameScore.northSouth >= 701 ? 'northSouth' : 'eastWest';
+    }
+
     this.broadcastGameState(room.code);
+  }
+
+  nextHand(socket, roomCode) {
+    const room = this.rooms.get(roomCode);
+    if (!room || room.state !== 'playing') return;
+
+    // Verifica che il gioco non sia finito
+    if (room.game.gameOver) {
+      socket.emit('error', { message: 'La partita è terminata' });
+      return;
+    }
+
+    // Inizializza una nuova mano con rotazione del dealer
+    this.initializeGame(room, true);
   }
 
  botBid(room, position) {
@@ -579,6 +632,7 @@ completeTrick(room) {
         position: pos,
         hand: room.game.hands[pos],
         currentPlayer: room.game.currentPlayer,
+        dealer: room.game.dealer,
         biddingPhase: room.game.biddingPhase,
         bids: room.game.bids,
         contract: room.game.contract,
@@ -594,7 +648,11 @@ completeTrick(room) {
         isLastTrick: room.game.isLastTrick,
         playerNames: playerNames,
         contro: room.game.contro,
-        surcontre: room.game.surcontre
+        surcontre: room.game.surcontre,
+        gameScore: room.gameScore,
+        handHistory: room.handHistory,
+        gameOver: room.game.gameOver,
+        winner: room.game.winner
       };
 
       this.io.to(socketId).emit('gameState', gameState);

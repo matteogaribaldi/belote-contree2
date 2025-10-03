@@ -58,6 +58,10 @@ io.on('connection', (socket) => {
     roomManager.playCard(socket, roomCode, card);
   });
 
+  socket.on('nextHand', (roomCode) => {
+    roomManager.nextHand(socket, roomCode);
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnesso:', socket.id);
     roomManager.handleDisconnect(socket);
