@@ -563,8 +563,6 @@
 .player-hand-bidding .card {
   cursor: default;
 }
-
-/* Winner announcement */
 .winner-announcement {
   position: fixed;
   top: 50%;
@@ -621,8 +619,6 @@
     font-size: 22px;
   }
 }
-
-/* Special bids section */
 .special-bids {
   display: flex;
   gap: 10px;
@@ -659,8 +655,6 @@
   background: rgba(156, 39, 176, 1);
   transform: scale(1.05);
 }
-
-/* Badges for bid history */
 .contro-badge, .surcontre-badge {
   display: inline-block;
   padding: 4px 12px;
@@ -679,16 +673,12 @@
   background: rgba(156, 39, 176, 0.9);
   color: white;
 }
-
-/* Hand score indicator */
 .hand-score {
   display: block;
   margin-top: 8px;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.7);
 }
-
-/* Dealer badge */
 .dealer-badge {
   display: inline-block;
   background: #FFD700;
@@ -699,8 +689,6 @@
   margin-right: 5px;
   font-size: 10px;
 }
-
-/* Game over screen */
 .game-over {
   position: fixed;
   top: 0;
@@ -828,8 +816,6 @@
 .final-game-scores .final-team.winner .final-points {
   color: #FFD700;
 }
-
-/* Hand history */
 .hand-history {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 15px;
@@ -895,8 +881,6 @@
   transform: scale(1.1);
   box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3);
 }
-
-/* Update final-score-card for hand complete */
 .final-score-card small {
   display: block;
   margin-top: 10px;
