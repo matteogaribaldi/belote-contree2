@@ -1,6 +1,9 @@
 <div class="game-container" *ngIf="gameState">
   <!-- Header con punteggi -->
   <div class="game-header">
+    <button class="audio-toggle" (click)="toggleAudio()" title="Toggle audio">
+      {{ audioService.isEnabled() ? '🔊' : '🔇' }}
+    </button>
     <div class="score-panel">
       <div class="team-score" [class.my-team]="isMyTeam('northSouth')">
         <h3>{{ getTeamNames('northSouth') }}</h3>
@@ -151,6 +154,7 @@
           class="trick-card"
           [class]="getTrickPosition(position)"
           [class.visible]="gameState.currentTrick[position]"
+          [class.winning-card]="isWinningCard(position)"
         >
           <div class="card" *ngIf="gameState.currentTrick[position]" [class]="getCardClass(gameState.currentTrick[position])">
             <div class="card-rank">{{ gameState.currentTrick[position].rank }}</div>

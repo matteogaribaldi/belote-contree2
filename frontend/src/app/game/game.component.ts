@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { SocketService } from '../services/socket.service';
+import { AudioService } from '../services/audio.service';
 import { Subscription } from 'rxjs';
 import { trigger, transition, style, animate } from '@angular/animations';
 
@@ -28,7 +29,9 @@ export class GameComponent implements OnInit, OnDestroy {
   gameState: any = null;
   selectedBid: any = null;
   showTrickOverlay = false;
-  showWinnerAnnouncement = false; 
+  showWinnerAnnouncement = false;
+  showWinningCard = false;
+  winningCardPosition: string = ''; 
 
   suitSymbols: any = {
     hearts: '♥',
@@ -50,7 +53,8 @@ export class GameComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
-    private socketService: SocketService
+    private socketService: SocketService,
+    public audioService: AudioService
   ) {}
 
   ngOnInit() {
@@ -70,6 +74,26 @@ this.subscriptions.push(
     // Pulisci la sessione se la partita è finita
     if (state.gameOver) {
       this.socketService.clearGameSession();
+      this.audioService.play('victory');
+    }
+
+    // Riproduci suono quando inizia una nuova mano
+    if (previousState && !previousState.biddingPhase && state.biddingPhase) {
+      this.audioService.play('newHand');
+      this.audioService.play('shuffle');
+    }
+
+    // Riproduci suono quando viene giocata una carta
+    const previousTrickSize = previousState ? Object.keys(previousState.currentTrick || {}).length : 0;
+    const currentTrickSize = Object.keys(state.currentTrick).length;
+    if (currentTrickSize > previousTrickSize) {
+      this.audioService.play('playCard');
+    }
+
+    // Riproduci suono Belote/Rebelote
+    if (state.beloteRebelote?.announced &&
+        (!previousState?.beloteRebelote?.announced)) {
+      this.audioService.play('belote');
     }
 
     // Mostra animazione vincitore quando un trick è completo (4 carte sul tavolo)
@@ -77,13 +101,30 @@ this.subscriptions.push(
     const previousTrickComplete = previousState && Object.keys(previousState.currentTrick || {}).length === 4;
 
     if (trickComplete && !previousTrickComplete) {
-      // Nuovo trick completo, mostra animazione
-      this.showWinnerAnnouncement = true;
+      // Determina il vincitore dal lastTrick
+      if (state.lastTrick?.winner) {
+        this.winningCardPosition = state.lastTrick.winner;
+      }
 
-      // Nascondi l'annuncio dopo 2 secondi
+      // Prima: evidenzia subito la carta vincente
+      this.showWinningCard = true;
+
+      // Dopo 600ms: mostra popup verde con annuncio
       setTimeout(() => {
-        this.showWinnerAnnouncement = false;
-      }, 2000);
+        this.audioService.play('winTrick');
+        this.showWinnerAnnouncement = true;
+
+        // Nascondi popup dopo 1.2 secondi
+        setTimeout(() => {
+          this.showWinnerAnnouncement = false;
+        }, 1200);
+      }, 600);
+    }
+
+    // Reset quando il trick viene pulito dal server
+    if (!trickComplete && previousTrickComplete) {
+      this.showWinningCard = false;
+      this.winningCardPosition = '';
     }
   })
 );
@@ -112,6 +153,11 @@ this.subscriptions.push(
     if (type === 'bid' && suit && points) {
       bid.suit = suit;
       bid.points = points;
+      this.audioService.play('bid');
+    } else if (type === 'pass') {
+      this.audioService.play('pass');
+    } else if (type === 'contro' || type === 'surcontre') {
+      this.audioService.play('bid');
     }
 
     this.socketService.placeBid(this.roomCode, bid);
@@ -288,5 +334,13 @@ this.subscriptions.push(
     const now = Date.now();
     const elapsed = now - bubble.timestamp;
     return elapsed < 3000;
+  }
+
+  toggleAudio() {
+    this.audioService.toggle();
+  }
+
+  isWinningCard(position: string): boolean {
+    return this.showWinningCard && this.winningCardPosition === position;
   }
 }
