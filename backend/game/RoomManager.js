@@ -166,7 +166,9 @@ room.game = {
     if (!position || room.game.currentPlayer !== position) return;
 
     if (!this.isValidBid(room.game, bid, position)) {
-      socket.emit('error', { message: 'Puntata non valida' });
+      if (socket && socket.emit) {
+        socket.emit('error', { message: 'Puntata non valida' });
+      }
       return;
     }
 
@@ -446,9 +448,9 @@ completeTrick(room) {
 
   const hand = room.game.hands[position];
   const currentBid = [...room.game.bids].reverse().find(b => b.bid.type === 'bid');
-  
+
   console.log(`Bot ${position} sta facendo bid...`);
-  const bid = this.botPlayer.makeBid(hand, currentBid);
+  const bid = this.botPlayer.makeBid(hand, currentBid, position);
   console.log(`Bot ${position} ha scelto:`, bid);
   
   this.placeBid({ id: 'bot' }, room.code, bid, position);
