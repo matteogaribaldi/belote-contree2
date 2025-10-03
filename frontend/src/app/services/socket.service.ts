@@ -11,6 +11,16 @@ export class SocketService {
 
   constructor() {
     this.socket = io(environment.socketUrl);
+
+    // Tenta di riconnettersi automaticamente se c'è una partita salvata
+    this.socket.on('connect', () => {
+      const savedGame = localStorage.getItem('belote_game');
+      if (savedGame) {
+        const { roomCode, playerName } = JSON.parse(savedGame);
+        console.log('Tentativo di riconnessione a', roomCode, 'come', playerName);
+        this.reconnect(roomCode, playerName);
+      }
+    });
   }
 
   getSocketId(): string {
@@ -51,6 +61,24 @@ export class SocketService {
 
   getActiveRooms() {
     this.socket.emit('getActiveRooms');
+  }
+
+  reconnect(roomCode: string, playerName: string) {
+    this.socket.emit('reconnect', { roomCode, playerName });
+  }
+
+  saveGameSession(roomCode: string, playerName: string) {
+    localStorage.setItem('belote_game', JSON.stringify({ roomCode, playerName }));
+  }
+
+  clearGameSession() {
+    localStorage.removeItem('belote_game');
+  }
+
+  onReconnected(): Observable<any> {
+    return new Observable(observer => {
+      this.socket.on('reconnected', (data) => observer.next(data));
+    });
   }
 
   onRoomCreated(): Observable<any> {

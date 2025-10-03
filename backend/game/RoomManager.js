@@ -11,6 +11,8 @@ class RoomManager {
     this.gameLogic = new GameLogic();
     this.botPlayer = new BotPlayer(this.gameLogic);
     this.dealerRotation = ['north', 'east', 'south', 'west'];
+    this.disconnectedPlayers = new Map(); // { roomCode-position: { playerName, timeout } }
+    this.reconnectionTimeout = 60000; // 60 secondi
   }
 
   generateRoomCode() {
@@ -35,7 +37,14 @@ class RoomManager {
         south: false,
         west: false
       },
+      disconnectedStatus: {
+        north: false,
+        east: false,
+        south: false,
+        west: false
+      },
       playerNames: {},
+      botCounter: 0,
       state: 'waiting',
       game: null,
       gameScore: { northSouth: 0, eastWest: 0 },
@@ -102,6 +111,19 @@ class RoomManager {
 
     if (room.players[position] === null) {
       room.bots[position] = !room.bots[position];
+
+      if (room.bots[position]) {
+        // Aggiungi il bot con nome personalizzato
+        room.botCounter++;
+        const botId = `bot-${position}`;
+        const botName = `Bot ${room.botCounter}`;
+        room.players[position] = botId;
+        room.playerNames[botId] = botName;
+      } else {
+        // Rimuovi il bot
+        room.players[position] = null;
+      }
+
       this.broadcastRoomState(roomCode);
     }
   }
@@ -327,8 +349,13 @@ playCard(socket, roomCode, card, botPosition = null) {
 
     const hand = room.game.hands[position];
     const cardIndex = hand.findIndex(c => c.suit === card.suit && c.rank === card.rank);
-    
-    if (cardIndex === -1) return;
+
+    console.log(`playCard: ${position} gioca ${card.rank} di ${card.suit}, carte rimanenti: ${hand.length}`);
+
+    if (cardIndex === -1) {
+      console.log(`ERRORE: Carta non trovata in mano! ${position} cercava ${card.rank} di ${card.suit}`);
+      return;
+    }
 
     if (!this.gameLogic.isValidPlay(card, hand, room.game.currentTrick, room.game.trump)) {
       socket.emit('error', { message: 'Carta non valida' });
@@ -345,7 +372,11 @@ playCard(socket, roomCode, card, botPosition = null) {
     hand.splice(cardIndex, 1);
     room.game.currentTrick[position] = card;
 
+    console.log(`Dopo rimozione: ${position} ha ${hand.length} carte rimanenti`);
+    console.log(`Trick corrente ha ${Object.keys(room.game.currentTrick).length} carte`);
+
     if (Object.keys(room.game.currentTrick).length === 4) {
+  console.log('Trick completo, chiamando completeTrick');
   this.completeTrick(room);
 } else {
   room.game.currentPlayer = this.gameLogic.getNextPlayer(room.game.currentPlayer);
@@ -379,6 +410,12 @@ completeTrick(room) {
   // Controlla se è l'ultimo trick (mani vuote)
   const handsEmpty = Object.values(room.game.hands).every(hand => hand.length === 0);
   console.log('Mani vuote?', handsEmpty);
+  console.log('Carte rimanenti per posizione:', {
+    north: room.game.hands.north.length,
+    east: room.game.hands.east.length,
+    south: room.game.hands.south.length,
+    west: room.game.hands.west.length
+  });
 
   // Mostra il trick completo per 3 secondi
   this.broadcastGameState(room.code);
@@ -531,6 +568,53 @@ completeTrick(room) {
     return null;
   }
 
+  reconnectPlayer(socket, roomCode, playerName) {
+    const room = this.rooms.get(roomCode);
+
+    if (!room) {
+      socket.emit('error', { message: 'Stanza non trovata' });
+      return;
+    }
+
+    if (room.state !== 'playing') {
+      socket.emit('error', { message: 'La partita non è in corso' });
+      return;
+    }
+
+    // Cerca il giocatore disconnesso
+    let reconnectedPosition = null;
+    for (let pos in room.players) {
+      const disconnectKey = `${roomCode}-${pos}`;
+      const disconnectedData = this.disconnectedPlayers.get(disconnectKey);
+
+      if (disconnectedData && disconnectedData.playerName === playerName) {
+        reconnectedPosition = pos;
+
+        // Cancella il timeout
+        clearTimeout(disconnectedData.timeout);
+        this.disconnectedPlayers.delete(disconnectKey);
+
+        // Ripristina il giocatore
+        room.bots[pos] = false;
+        room.disconnectedStatus[pos] = false;
+        room.players[pos] = socket.id;
+        room.playerNames[socket.id] = playerName;
+        this.playerRooms.set(socket.id, roomCode);
+
+        socket.join(roomCode);
+
+        console.log(`${playerName} riconnesso come ${pos} nella stanza ${roomCode}`);
+
+        socket.emit('reconnected', { roomCode, position: pos });
+        this.broadcastGameState(roomCode);
+
+        return;
+      }
+    }
+
+    socket.emit('error', { message: 'Nessuna partita in attesa di riconnessione trovata' });
+  }
+
   handleDisconnect(socket) {
     const roomCode = this.playerRooms.get(socket.id);
     if (!roomCode) return;
@@ -539,16 +623,55 @@ completeTrick(room) {
     if (!room) return;
 
     const position = this.getPlayerPosition(room, socket.id);
-    
+
     if (position) {
       if (room.state === 'playing') {
-        room.bots[position] = true;
+        // Salva i dati del giocatore disconnesso
+        const disconnectKey = `${roomCode}-${position}`;
+        const playerName = room.playerNames[socket.id];
+
+        console.log(`Giocatore ${position} (${playerName}) disconnesso dalla stanza ${roomCode}. Attesa riconnessione...`);
+
+        // Imposta timeout per convertire in bot dopo 60 secondi
+        const timeout = setTimeout(() => {
+          console.log(`Timeout scaduto. ${position} convertito in bot nella stanza ${roomCode}`);
+
+          room.bots[position] = true;
+          room.disconnectedStatus[position] = false;
+          room.botCounter++;
+          const botName = `Bot ${room.botCounter}`;
+          room.players[position] = `bot-${position}`;
+          room.playerNames[`bot-${position}`] = botName;
+
+          this.disconnectedPlayers.delete(disconnectKey);
+          this.broadcastGameState(roomCode);
+
+          // Se è il turno del giocatore disconnesso, fallo giocare come bot
+          if (room.game && room.game.currentPlayer === position) {
+            if (room.game.biddingPhase) {
+              setTimeout(() => this.botBid(room, position), 1000);
+            } else {
+              setTimeout(() => this.botPlay(room, position), 1000);
+            }
+          }
+        }, this.reconnectionTimeout);
+
+        this.disconnectedPlayers.set(disconnectKey, {
+          playerName,
+          oldSocketId: socket.id,
+          timeout
+        });
+
+        // Marca come disconnesso (non come bot permanente)
+        room.disconnectedStatus[position] = true;
+        room.bots[position] = true;  // Temporaneamente per far giocare l'AI
         room.players[position] = `bot-${position}`;
-        
-        console.log(`Giocatore ${position} convertito in bot nella stanza ${roomCode}`);
-        
+        // Mantieni il nome originale invece di sovrascriverlo
+        room.playerNames[`bot-${position}`] = playerName;
+
         this.broadcastGameState(roomCode);
-        
+
+        // Se è il turno del giocatore, continua con il bot
         if (room.game.currentPlayer === position) {
           if (room.game.biddingPhase) {
             setTimeout(() => this.botBid(room, position), 1000);
@@ -616,7 +739,13 @@ completeTrick(room) {
     for (let pos in room.players) {
       const socketId = room.players[pos];
       if (socketId) {
-        playerNames[pos] = room.playerNames[socketId] || this.getPositionLabel(pos);
+        if (room.disconnectedStatus[pos]) {
+          // Mostra il nome originale con "(Disconnesso...)"
+          const originalName = room.playerNames[socketId] || this.getPositionLabel(pos);
+          playerNames[pos] = `${originalName} (Disconnesso...)`;
+        } else {
+          playerNames[pos] = room.playerNames[socketId] || this.getPositionLabel(pos);
+        }
       } else if (room.bots[pos]) {
         playerNames[pos] = 'BOT';
       } else {

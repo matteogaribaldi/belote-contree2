@@ -62,6 +62,10 @@ io.on('connection', (socket) => {
     roomManager.nextHand(socket, roomCode);
   });
 
+  socket.on('reconnect', ({ roomCode, playerName }) => {
+    roomManager.reconnectPlayer(socket, roomCode, playerName);
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnesso:', socket.id);
     roomManager.handleDisconnect(socket);

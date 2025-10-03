@@ -49,6 +49,17 @@ this.subscriptions.push(
     const previousState = this.gameState;
     this.gameState = state;
 
+    // Salva la sessione in localStorage quando ricevi lo stato di gioco
+    const playerName = localStorage.getItem('belote_playerName');
+    if (playerName) {
+      this.socketService.saveGameSession(this.roomCode, playerName);
+    }
+
+    // Pulisci la sessione se la partita è finita
+    if (state.gameOver) {
+      this.socketService.clearGameSession();
+    }
+
     // Mostra animazione vincitore quando un trick è completo (4 carte sul tavolo)
     const trickComplete = Object.keys(state.currentTrick).length === 4;
     const previousTrickComplete = previousState && Object.keys(previousState.currentTrick || {}).length === 4;
@@ -62,6 +73,13 @@ this.subscriptions.push(
         this.showWinnerAnnouncement = false;
       }, 2000);
     }
+  })
+);
+
+this.subscriptions.push(
+  this.socketService.onReconnected().subscribe(data => {
+    console.log('Riconnesso con successo!', data);
+    // Il game state verrà inviato automaticamente dal server
   })
 );
 
