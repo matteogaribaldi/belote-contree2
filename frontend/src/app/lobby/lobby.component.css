@@ -60,11 +60,63 @@ h1 {
   to { opacity: 1; transform: translateY(0); }
 }
 
+.active-rooms {
+  margin-top: 30px;
+}
+
+.active-rooms h3 {
+  font-size: 18px;
+  margin-bottom: 15px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.room-item {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.room-item:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateX(5px);
+}
+
+.room-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.room-code {
+  font-size: 18px;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.room-host {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.room-players {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
 @media (max-width: 480px) {
   .lobby-card {
     padding: 30px 20px;
   }
-  
+
   h1 {
     font-size: 28px;
   }

@@ -25,6 +25,11 @@ const roomManager = new RoomManager(io);
 io.on('connection', (socket) => {
   console.log('Nuovo client connesso:', socket.id);
 
+  socket.on('getActiveRooms', () => {
+    const activeRooms = roomManager.getActiveRooms();
+    socket.emit('activeRoomsList', activeRooms);
+  });
+
   socket.on('createRoom', (playerName) => {
     roomManager.createRoom(socket, playerName);
   });
@@ -52,10 +57,6 @@ io.on('connection', (socket) => {
   socket.on('playCard', ({ roomCode, card }) => {
     roomManager.playCard(socket, roomCode, card);
   });
-
-  socket.on('confirmTrick', ({ roomCode }) => {
-  roomManager.confirmTrick(socket, roomCode);
-});
 
   socket.on('disconnect', () => {
     console.log('Client disconnesso:', socket.id);

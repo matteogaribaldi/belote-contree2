@@ -15,6 +15,7 @@ export class LobbyComponent implements OnInit {
   playerName = '';
   roomCode = '';
   showJoinForm = false;
+  activeRooms: any[] = [];
 
   constructor(
     private socketService: SocketService,
@@ -33,6 +34,12 @@ export class LobbyComponent implements OnInit {
     this.socketService.onError().subscribe(error => {
       alert(error.message);
     });
+
+    this.socketService.onActiveRoomsList().subscribe(rooms => {
+      this.activeRooms = rooms;
+    });
+
+    this.socketService.getActiveRooms();
   }
 
   createRoom() {
@@ -50,5 +57,13 @@ export class LobbyComponent implements OnInit {
   toggleJoinForm() {
     this.showJoinForm = !this.showJoinForm;
     this.roomCode = '';
+  }
+
+  joinActiveRoom(roomCode: string) {
+    if (this.playerName.trim()) {
+      this.socketService.joinRoom(roomCode, this.playerName.trim());
+    } else {
+      alert('Inserisci il tuo nome prima di unirti a una partita');
+    }
   }
 }

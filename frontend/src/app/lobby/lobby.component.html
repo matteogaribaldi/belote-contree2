@@ -23,9 +23,9 @@
 
     <div class="join-form" *ngIf="showJoinForm">
       <div class="input-group">
-        <input 
-          type="text" 
-          [(ngModel)]="roomCode" 
+        <input
+          type="text"
+          [(ngModel)]="roomCode"
           placeholder="Codice stanza"
           maxlength="8"
           (keyup.enter)="joinRoom()"
@@ -39,6 +39,23 @@
         <button class="btn-secondary" (click)="toggleJoinForm()">
           Annulla
         </button>
+      </div>
+
+      <div class="active-rooms" *ngIf="activeRooms.length > 0">
+        <h3>Partite Attive</h3>
+        <div class="room-list">
+          <div
+            class="room-item"
+            *ngFor="let room of activeRooms"
+            (click)="joinActiveRoom(room.code)"
+          >
+            <div class="room-info">
+              <span class="room-code">{{ room.code }}</span>
+              <span class="room-host">Host: {{ room.hostName }}</span>
+              <span class="room-players">{{ room.playerCount }}/4 giocatori</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

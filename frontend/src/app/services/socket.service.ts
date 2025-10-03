@@ -45,8 +45,8 @@ export class SocketService {
     this.socket.emit('playCard', { roomCode, card });
   }
 
-  confirmTrick(roomCode: string) {
-    this.socket.emit('confirmTrick', { roomCode });
+  getActiveRooms() {
+    this.socket.emit('getActiveRooms');
   }
 
   onRoomCreated(): Observable<any> {
@@ -76,6 +76,12 @@ export class SocketService {
   onError(): Observable<any> {
     return new Observable(observer => {
       this.socket.on('error', (data) => observer.next(data));
+    });
+  }
+
+  onActiveRoomsList(): Observable<any> {
+    return new Observable(observer => {
+      this.socket.on('activeRoomsList', (data) => observer.next(data));
     });
   }
 }
