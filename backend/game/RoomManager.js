@@ -142,7 +142,9 @@ room.game = {
   lastTrick: null,
   trickConfirmations: null,
   waitingForConfirmation: false,
-  isLastTrick: false               // AGGIUNGI QUESTO
+  isLastTrick: false,
+  contro: false,
+  surcontre: false
 };
   
   // Ordina le carte DOPO aver inizializzato room.game
@@ -163,12 +165,19 @@ room.game = {
     const position = botPosition || this.getPlayerPosition(room, socket.id);
     if (!position || room.game.currentPlayer !== position) return;
 
-    if (!this.isValidBid(room.game, bid)) {
+    if (!this.isValidBid(room.game, bid, position)) {
       socket.emit('error', { message: 'Puntata non valida' });
       return;
     }
 
     room.game.bids.push({ player: position, bid });
+
+    // Gestisci contro e surcontre
+    if (bid.type === 'contro') {
+      room.game.contro = true;
+    } else if (bid.type === 'surcontre') {
+      room.game.surcontre = true;
+    }
 
     if (bid.type === 'pass') {
   // Conta i pass consecutivi
@@ -215,12 +224,12 @@ room.game = {
     }
   }
 
-  isValidBid(game, bid) {
+  isValidBid(game, bid, position) {
   // Passo è sempre valido
   if (bid.type === 'pass') {
     return true;
   }
-  
+
   // Se è una puntata
   if (bid.type === 'bid') {
     // Controlla che i punti siano validi
@@ -237,7 +246,7 @@ room.game = {
 
     // Trova l'ultima puntata (non pass)
     const lastBid = [...game.bids].reverse().find(b => b.bid.type === 'bid');
-    
+
     // Se c'è già una puntata, la nuova deve essere superiore di almeno 10 punti
     if (lastBid && bid.points <= lastBid.bid.points) {
       return false;
@@ -246,7 +255,44 @@ room.game = {
     return true;
   }
 
-  // Se non è né pass né bid, non è valido
+  // Se è contro
+  if (bid.type === 'contro') {
+    // Deve esserci una puntata attiva
+    const lastBid = [...game.bids].reverse().find(b => b.bid.type === 'bid');
+    if (!lastBid) return false;
+
+    // Non deve esserci già un contro
+    if (game.contro) return false;
+
+    // Deve essere della squadra avversaria
+    const bidderTeam = (lastBid.player === 'north' || lastBid.player === 'south') ? 'NS' : 'EW';
+    const playerTeam = (position === 'north' || position === 'south') ? 'NS' : 'EW';
+    if (bidderTeam === playerTeam) return false;
+
+    return true;
+  }
+
+  // Se è surcontre
+  if (bid.type === 'surcontre') {
+    // Deve esserci un contro attivo
+    if (!game.contro) return false;
+
+    // Non deve esserci già un surcontre
+    if (game.surcontre) return false;
+
+    // Trova l'ultima puntata (non pass, non contro, non surcontre)
+    const lastBid = [...game.bids].reverse().find(b => b.bid.type === 'bid');
+    if (!lastBid) return false;
+
+    // Deve essere della squadra che ha fatto l'offerta originale
+    const bidderTeam = (lastBid.player === 'north' || lastBid.player === 'south') ? 'NS' : 'EW';
+    const playerTeam = (position === 'north' || position === 'south') ? 'NS' : 'EW';
+    if (bidderTeam !== playerTeam) return false;
+
+    return true;
+  }
+
+  // Se non è né pass né bid né contro né surcontre, non è valido
   return false;
 }
 
@@ -353,25 +399,33 @@ completeTrick(room) {
       }
     }
 
-    const contractTeam = room.game.contract.player === 'north' || room.game.contract.player === 'south' 
+    const contractTeam = room.game.contract.player === 'north' || room.game.contract.player === 'south'
       ? 'northSouth' : 'eastWest';
     const contractPoints = room.game.contract.bid.points;
     const teamScore = room.game.score[contractTeam];
 
+    // Calcola il moltiplicatore
+    let multiplier = 1;
+    if (room.game.surcontre) {
+      multiplier = 4;
+    } else if (room.game.contro) {
+      multiplier = 2;
+    }
+
     let finalScore = { northSouth: 0, eastWest: 0 };
 
     if (teamScore >= contractPoints) {
-      finalScore[contractTeam] = room.game.score[contractTeam];
+      finalScore[contractTeam] = room.game.score[contractTeam] * multiplier;
       const otherTeam = contractTeam === 'northSouth' ? 'eastWest' : 'northSouth';
-      finalScore[otherTeam] = room.game.score[otherTeam];
+      finalScore[otherTeam] = room.game.score[otherTeam] * multiplier;
     } else {
       const otherTeam = contractTeam === 'northSouth' ? 'eastWest' : 'northSouth';
-      finalScore[otherTeam] = 162;
+      finalScore[otherTeam] = 162 * multiplier;
       if (room.game.beloteRebelote && room.game.beloteRebelote.announced) {
         const beloteTeam = room.game.beloteRebelote.player === 'north' || room.game.beloteRebelote.player === 'south'
           ? 'northSouth' : 'eastWest';
         if (beloteTeam !== contractTeam) {
-          finalScore[beloteTeam] += 20;
+          finalScore[beloteTeam] += 20 * multiplier;
         }
       }
     }
@@ -536,8 +590,9 @@ completeTrick(room) {
         waitingForConfirmation: room.game.waitingForConfirmation,
         trickConfirmations: room.game.trickConfirmations,
         isLastTrick: room.game.isLastTrick,
-        playerNames: playerNames  // AGGIUNGI QUESTA
-
+        playerNames: playerNames,
+        contro: room.game.contro,
+        surcontre: room.game.surcontre
       };
 
       this.io.to(socketId).emit('gameState', gameState);

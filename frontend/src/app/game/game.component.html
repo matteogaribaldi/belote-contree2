@@ -2,7 +2,7 @@
   <!-- Header con punteggi -->
   <div class="game-header">
     <div class="score-panel">
-      <div class="team-score">
+      <div class="team-score" [class.my-team]="isMyTeam('northSouth')">
         <h3>{{ getTeamNames('northSouth') }}</h3>
         <div class="score">{{ gameState.score.northSouth }}</div>
       </div>
@@ -18,7 +18,7 @@
           <small>{{ getPositionLabel(gameState.contract.player) }}</small>
         </div>
       </div>
-      <div class="team-score">
+      <div class="team-score" [class.my-team]="isMyTeam('eastWest')">
         <h3>{{ getTeamNames('eastWest') }}</h3>
         <div class="score">{{ gameState.score.eastWest }}</div>
       </div>
@@ -36,20 +36,22 @@
           <strong>{{ getPositionLabel(bidEntry.player) }}:</strong>
           <span *ngIf="bidEntry.bid.type === 'pass'">Passo</span>
           <span *ngIf="bidEntry.bid.type === 'bid'">
-            {{ bidEntry.bid.points }} - 
+            {{ bidEntry.bid.points }} -
             <span [class]="getCardClass({suit: bidEntry.bid.suit})">
               {{ getSuitSymbol(bidEntry.bid.suit) }}
             </span>
           </span>
+          <span *ngIf="bidEntry.bid.type === 'contro'" class="contro-badge">Contro</span>
+          <span *ngIf="bidEntry.bid.type === 'surcontre'" class="surcontre-badge">Surcontre</span>
         </div>
       </div>
     </div>
 
     <div class="bidding-actions" *ngIf="isMyTurn()">
       <h3>È il tuo turno!</h3>
-      
+
       <div *ngIf="!selectedBid" class="suit-selection">
-        <button 
+        <button
           *ngFor="let suit of ['hearts', 'diamonds', 'clubs', 'spades']"
           class="btn-suit"
           [class]="getCardClass({suit: suit})"
@@ -61,13 +63,13 @@
 
       <div *ngIf="selectedBid" class="points-selection">
         <h4>
-          Seme selezionato: 
+          Seme selezionato:
           <span [class]="getCardClass({suit: selectedBid.suit})">
             {{ getSuitSymbol(selectedBid.suit) }}
           </span>
         </h4>
         <div class="points-grid">
-          <button 
+          <button
             *ngFor="let points of bidPoints"
             class="btn-points"
             [disabled]="!canBidPoints(points)"
@@ -77,6 +79,23 @@
           </button>
         </div>
         <button class="btn-back" (click)="selectedBid = null">Indietro</button>
+      </div>
+
+      <div class="special-bids">
+        <button
+          class="btn-contro"
+          *ngIf="canContro()"
+          (click)="placeContro()"
+        >
+          Contro
+        </button>
+        <button
+          class="btn-surcontre"
+          *ngIf="canSurcontre()"
+          (click)="placeSurcontre()"
+        >
+          Surcontre
+        </button>
       </div>
 
       <button class="btn-pass" (click)="placeBid('pass')">
@@ -120,7 +139,7 @@
             <div class="card-rank">{{ gameState.currentTrick[position].rank }}</div>
             <div class="card-suit">{{ getSuitSymbol(gameState.currentTrick[position].suit) }}</div>
           </div>
-          <div class="position-indicator" [class.current-turn]="position === gameState.currentPlayer">{{ getPositionLabel(position) }}</div>
+          <div class="position-indicator" [class.current-turn]="position === gameState.currentPlayer" [class.my-position]="position === gameState.position">{{ getPositionLabel(position) }}</div>
         </div>
       </div>
 

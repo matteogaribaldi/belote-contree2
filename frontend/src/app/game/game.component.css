@@ -21,6 +21,22 @@
 
 .team-score {
   text-align: center;
+  padding: 10px;
+  border-radius: 10px;
+  transition: all 0.3s;
+}
+
+.team-score.my-team {
+  background: rgba(255, 235, 59, 0.2);
+  border: 2px solid #FFD700;
+}
+
+.team-score.my-team h3 {
+  color: #FFD700;
+  text-decoration: underline;
+  text-decoration-color: #FFD700;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
 }
 
 .team-score h3 {
@@ -272,6 +288,19 @@
   font-weight: bold;
   opacity: 1;
   color: #4CAF50;
+}
+
+.position-indicator.my-position {
+  background: rgba(255, 235, 59, 0.3);
+  color: #FFD700;
+  font-weight: bold;
+  text-decoration: underline;
+  text-decoration-color: #FFD700;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid #FFD700;
 }
 
 .card {
@@ -591,4 +620,62 @@
   .winner-points {
     font-size: 22px;
   }
+}
+
+/* Special bids section */
+.special-bids {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.btn-contro, .btn-surcontre {
+  flex: 1;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.btn-contro {
+  background: rgba(255, 87, 34, 0.8);
+  color: white;
+  border: 2px solid #ff5722;
+}
+
+.btn-contro:hover {
+  background: rgba(255, 87, 34, 1);
+  transform: scale(1.05);
+}
+
+.btn-surcontre {
+  background: rgba(156, 39, 176, 0.8);
+  color: white;
+  border: 2px solid #9c27b0;
+}
+
+.btn-surcontre:hover {
+  background: rgba(156, 39, 176, 1);
+  transform: scale(1.05);
+}
+
+/* Badges for bid history */
+.contro-badge, .surcontre-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 14px;
+  margin-left: 8px;
+}
+
+.contro-badge {
+  background: rgba(255, 87, 34, 0.9);
+  color: white;
+}
+
+.surcontre-badge {
+  background: rgba(156, 39, 176, 0.9);
+  color: white;
 }
