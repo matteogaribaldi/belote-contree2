@@ -597,13 +597,20 @@ completeTrick(room) {
         // Ripristina il giocatore
         room.bots[pos] = false;
         room.disconnectedStatus[pos] = false;
+
+        // Se era l'host, mantieni lo stato di host
+        const wasHost = room.host === disconnectedData.oldSocketId;
+        if (wasHost) {
+          room.host = socket.id;
+        }
+
         room.players[pos] = socket.id;
         room.playerNames[socket.id] = playerName;
         this.playerRooms.set(socket.id, roomCode);
 
         socket.join(roomCode);
 
-        console.log(`${playerName} riconnesso come ${pos} nella stanza ${roomCode}`);
+        console.log(`${playerName} riconnesso come ${pos} nella stanza ${roomCode}${wasHost ? ' (host ripristinato)' : ''}`);
 
         socket.emit('reconnected', { roomCode, position: pos });
         this.broadcastGameState(roomCode);
