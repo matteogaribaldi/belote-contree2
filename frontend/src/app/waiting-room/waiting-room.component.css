@@ -58,6 +58,49 @@
 .east { grid-column: 3; grid-row: 2; }
 .center { grid-column: 2; grid-row: 2; }
 
+/* Team colors: North-South vs East-West */
+.north .player-slot,
+.south .player-slot {
+  border-color: rgba(33, 150, 243, 0.6);
+}
+
+.north .player-slot.available,
+.south .player-slot.available {
+  border-color: #2196F3;
+}
+
+.north .player-slot.available:hover,
+.south .player-slot.available:hover {
+  background: rgba(33, 150, 243, 0.2);
+}
+
+.north .player-slot.selected,
+.south .player-slot.selected {
+  background: rgba(33, 150, 243, 0.3);
+  border-color: #2196F3;
+}
+
+.west .player-slot,
+.east .player-slot {
+  border-color: rgba(255, 152, 0, 0.6);
+}
+
+.west .player-slot.available,
+.east .player-slot.available {
+  border-color: #FF9800;
+}
+
+.west .player-slot.available:hover,
+.east .player-slot.available:hover {
+  background: rgba(255, 152, 0, 0.2);
+}
+
+.west .player-slot.selected,
+.east .player-slot.selected {
+  background: rgba(255, 152, 0, 0.3);
+  border-color: #FF9800;
+}
+
 .player-slot {
   background: rgba(255, 255, 255, 0.15);
   border: 2px solid rgba(255, 255, 255, 0.3);
