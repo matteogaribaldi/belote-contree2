@@ -120,7 +120,7 @@
             <div class="card-rank">{{ gameState.currentTrick[position].rank }}</div>
             <div class="card-suit">{{ getSuitSymbol(gameState.currentTrick[position].suit) }}</div>
           </div>
-          <div class="position-indicator">{{ getPositionLabel(position) }}</div>
+          <div class="position-indicator" [class.current-turn]="position === gameState.currentPlayer">{{ getPositionLabel(position) }}</div>
         </div>
       </div>
 
