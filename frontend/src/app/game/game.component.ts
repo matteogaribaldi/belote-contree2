@@ -3,13 +3,25 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { SocketService } from '../services/socket.service';
 import { Subscription } from 'rxjs';
+import { trigger, transition, style, animate } from '@angular/animations';
 
 @Component({
   selector: 'app-game',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './game.component.html',
-  styleUrls: ['./game.component.css']
+  styleUrls: ['./game.component.css'],
+  animations: [
+    trigger('fadeInOut', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(-10px) scale(0.8)' }),
+        animate('300ms ease-out', style({ opacity: 1, transform: 'translateY(0) scale(1)' }))
+      ]),
+      transition(':leave', [
+        animate('300ms ease-in', style({ opacity: 0, transform: 'translateY(-10px) scale(0.8)' }))
+      ])
+    ])
+  ]
 })
 export class GameComponent implements OnInit, OnDestroy {
   roomCode = '';
@@ -262,5 +274,19 @@ this.subscriptions.push(
   getWinnerTeamName(): string {
     if (!this.gameState?.winner) return '';
     return this.getTeamNames(this.gameState.winner);
+  }
+
+  shouldShowSpeechBubble(position: string): boolean {
+    if (!this.gameState?.lastSpeechBubble) return false;
+
+    const bubble = this.gameState.lastSpeechBubble;
+
+    // Mostra solo se è la posizione corretta
+    if (bubble.position !== position) return false;
+
+    // Mostra per 3 secondi dopo il timestamp
+    const now = Date.now();
+    const elapsed = now - bubble.timestamp;
+    return elapsed < 3000;
   }
 }

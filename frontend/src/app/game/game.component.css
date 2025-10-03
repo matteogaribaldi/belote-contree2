@@ -940,3 +940,109 @@
     text-align: center;
   }
 }
+/* Fumetti dei giocatori */
+.speech-bubble {
+  position: absolute;
+  background: #ffffff;
+  color: #333;
+  padding: 8px 12px;
+  border-radius: 15px;
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  white-space: nowrap;
+  border: 2px solid #d4af37;
+}
+
+/* Posizionamento fumetti per ogni posizione */
+.trick-card.position-north .speech-bubble {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 15px;
+}
+
+.trick-card.position-north .speech-bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: #ffffff;
+}
+
+.trick-card.position-south .speech-bubble {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 15px;
+}
+
+.trick-card.position-south .speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-bottom-color: #ffffff;
+}
+
+.trick-card.position-east .speech-bubble {
+  top: 50%;
+  right: 100%;
+  transform: translateY(-50%);
+  margin-right: 15px;
+}
+
+.trick-card.position-east .speech-bubble::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  border: 8px solid transparent;
+  border-left-color: #ffffff;
+}
+
+.trick-card.position-west .speech-bubble {
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  margin-left: 15px;
+}
+
+.trick-card.position-west .speech-bubble::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  transform: translateY(-50%);
+  border: 8px solid transparent;
+  border-right-color: #ffffff;
+}
+
+/* Animazione pulsante */
+@keyframes pulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.05);
+  }
+}
+
+.trick-card.position-north .speech-bubble,
+.trick-card.position-south .speech-bubble {
+  animation: pulse 1s ease-in-out;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .speech-bubble {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}

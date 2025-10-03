@@ -372,6 +372,12 @@ playCard(socket, roomCode, card, botPosition = null) {
     hand.splice(cardIndex, 1);
     room.game.currentTrick[position] = card;
 
+    // Genera fumetto (30% probabilità)
+    const speechBubble = this.generateSpeechBubble(card, room.game.currentTrick, room.game.trump);
+    if (speechBubble) {
+      room.game.lastSpeechBubble = { position, message: speechBubble, timestamp: Date.now() };
+    }
+
     console.log(`Dopo rimozione: ${position} ha ${hand.length} carte rimanenti`);
     console.log(`Trick corrente ha ${Object.keys(room.game.currentTrick).length} carte`);
 
@@ -557,6 +563,70 @@ completeTrick(room) {
 
   isBot(room, position) {
     return room.bots[position] || (room.players[position] && room.players[position].startsWith('bot-'));
+  }
+
+  generateSpeechBubble(card, currentTrick, trump) {
+    // 30% probabilità di mostrare un fumetto
+    if (Math.random() > 0.3) return null;
+
+    const leadCard = currentTrick[Object.keys(currentTrick)[0]];
+    const isFirstCard = Object.keys(currentTrick).length === 0;
+    const isTrump = card.suit === trump;
+    const leadSuit = leadCard ? leadCard.suit : null;
+
+    const messages = [];
+
+    // Taglio (gioco atout quando il seme di apertura è diverso)
+    if (isTrump && leadSuit && leadSuit !== trump) {
+      messages.push('Taglio!', 'Atout!', 'Tajo!');
+    }
+
+    // Prima carta di picche
+    if (isFirstCard && card.suit === 'spades') {
+      messages.push('Picche nere!', 'Picche!');
+    }
+
+    // Prima carta di cuori
+    if (isFirstCard && card.suit === 'hearts') {
+      messages.push('Cuppe!', 'Cuori!');
+    }
+
+    // Prima carta di quadri
+    if (isFirstCard && card.suit === 'diamonds') {
+      messages.push('Quadri!', 'Carréa!');
+    }
+
+    // Prima carta di fiori
+    if (isFirstCard && card.suit === 'clubs') {
+      messages.push('Fiori!', 'Baštùn!');
+    }
+
+    // Gioca un 10
+    if (card.rank === '10') {
+      messages.push('Maniglia!', 'Dièsc!');
+    }
+
+    // Gioca un Asso
+    if (card.rank === 'A') {
+      messages.push('Asso!', 'Às!');
+    }
+
+    // Gioca il Jack di atout
+    if (card.rank === 'J' && isTrump) {
+      messages.push('Jack!', 'Valet!');
+    }
+
+    // Gioca il 9 di atout
+    if (card.rank === '9' && isTrump) {
+      messages.push('Neu d\'atout!', 'Nove!');
+    }
+
+    // Esclamazioni generiche (più rare)
+    if (Math.random() > 0.7) {
+      messages.push('Bon!', 'Ecco!', 'Via!', 'Andiamo!', 'Dai!');
+    }
+
+    return messages.length > 0 ? messages[Math.floor(Math.random() * messages.length)] : null;
   }
 
   getPlayerPosition(room, socketId) {
@@ -788,7 +858,8 @@ completeTrick(room) {
         gameScore: room.gameScore,
         handHistory: room.handHistory,
         gameOver: room.game.gameOver,
-        winner: room.game.winner
+        winner: room.game.winner,
+        lastSpeechBubble: room.game.lastSpeechBubble
       };
 
       this.io.to(socketId).emit('gameState', gameState);
