@@ -603,22 +603,22 @@ completeTrick(room) {
 
     // Gioca un 10
     if (card.rank === '10') {
-      messages.push('Maniglia!', 'Dièsc!');
+      messages.push('Maniglia!', 'Dièsc!', 'Arilla!', 'Rilliamo!');
     }
 
     // Gioca un Asso
     if (card.rank === 'A') {
-      messages.push('Asso!', 'Às!');
+      messages.push('Asso!', 'Às!', 'Bibbaaa!', 'Babbaaa!');
     }
 
     // Gioca il Jack di atout
     if (card.rank === 'J' && isTrump) {
-      messages.push('Jack!', 'Valet!');
+      messages.push('Jack!', 'Valet!', 'Rillina!', 'Trillina!');
     }
 
     // Gioca il 9 di atout
     if (card.rank === '9' && isTrump) {
-      messages.push('Neu d\'atout!', 'Nove!');
+      messages.push('Neu d\'atout!', 'Nove!', 'Rillina!', 'Trillina!');
     }
 
     // Esclamazioni generiche (più rare)

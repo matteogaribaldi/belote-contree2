@@ -131,21 +131,27 @@
     <div class="game-table">
       <!-- Trick corrente -->
       <div class="trick-area">
+        <!-- Fumetti separati (sopra le carte) -->
+        <div
+          *ngFor="let position of ['north', 'east', 'south', 'west']"
+          class="speech-bubble-container"
+          [class]="'position-' + position"
+        >
+          <div
+            class="speech-bubble"
+            *ngIf="shouldShowSpeechBubble(position)"
+          >
+            {{ gameState.lastSpeechBubble?.message }}
+          </div>
+        </div>
+
+        <!-- Carte -->
         <div
           *ngFor="let position of ['north', 'east', 'south', 'west']"
           class="trick-card"
           [class]="getTrickPosition(position)"
           [class.visible]="gameState.currentTrick[position]"
         >
-          <!-- Fumetto -->
-          <div
-            class="speech-bubble"
-            *ngIf="shouldShowSpeechBubble(position)"
-            [@fadeInOut]
-          >
-            {{ gameState.lastSpeechBubble?.message }}
-          </div>
-
           <div class="card" *ngIf="gameState.currentTrick[position]" [class]="getCardClass(gameState.currentTrick[position])">
             <div class="card-rank">{{ gameState.currentTrick[position].rank }}</div>
             <div class="card-suit">{{ getSuitSymbol(gameState.currentTrick[position].suit) }}</div>
