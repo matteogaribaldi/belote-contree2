@@ -133,6 +133,12 @@ this.subscriptions.push(
   }
 
   getPositionLabel(position: string): string {
+    // Se abbiamo i nomi dei giocatori nel gameState, usali
+    if (this.gameState?.playerNames && this.gameState.playerNames[position]) {
+      return this.gameState.playerNames[position];
+    }
+
+    // Altrimenti usa le etichette di default
     const labels: any = {
       north: 'Nord',
       south: 'Sud',

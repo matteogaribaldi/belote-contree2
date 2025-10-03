@@ -529,6 +529,19 @@ confirmTrick(socket, roomCode, botPosition = null) {
     const room = this.rooms.get(roomCode);
     if (!room || !room.game) return;
 
+    // Crea una mappa con i nomi dei giocatori per ogni posizione
+    const playerNames = {};
+    for (let pos in room.players) {
+      const socketId = room.players[pos];
+      if (socketId) {
+        playerNames[pos] = room.playerNames[socketId] || this.getPositionLabel(pos);
+      } else if (room.bots[pos]) {
+        playerNames[pos] = 'BOT';
+      } else {
+        playerNames[pos] = this.getPositionLabel(pos);
+      }
+    }
+
     for (let pos in room.players) {
       const socketId = room.players[pos];
       if (!socketId || this.isBot(room, pos)) continue;
@@ -547,14 +560,25 @@ confirmTrick(socket, roomCode, botPosition = null) {
         beloteRebelote: room.game.beloteRebelote,
         handComplete: room.game.handComplete,
         finalScore: room.game.finalScore,
-        waitingForConfirmation: room.game.waitingForConfirmation,  // AGGIUNGI QUESTA
-        trickConfirmations: room.game.trickConfirmations,          // AGGIUNGI QUESTA
-        isLastTrick: room.game.isLastTrick                         // AGGIUNGI QUESTA
+        waitingForConfirmation: room.game.waitingForConfirmation,
+        trickConfirmations: room.game.trickConfirmations,
+        isLastTrick: room.game.isLastTrick,
+        playerNames: playerNames  // AGGIUNGI QUESTA
 
       };
 
       this.io.to(socketId).emit('gameState', gameState);
     }
+  }
+
+  getPositionLabel(position) {
+    const labels = {
+      north: 'Nord',
+      south: 'Sud',
+      east: 'Est',
+      west: 'Ovest'
+    };
+    return labels[position] || position;
   }
 }
 
