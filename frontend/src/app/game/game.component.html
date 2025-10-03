@@ -3,7 +3,7 @@
   <div class="game-header">
     <div class="score-panel">
       <div class="team-score">
-        <h3>Nord-Sud</h3>
+        <h3>{{ getTeamNames('northSouth') }}</h3>
         <div class="score">{{ gameState.score.northSouth }}</div>
       </div>
       <div class="contract-info" *ngIf="gameState.contract">
@@ -19,7 +19,7 @@
         </div>
       </div>
       <div class="team-score">
-        <h3>Est-Ovest</h3>
+        <h3>{{ getTeamNames('eastWest') }}</h3>
         <div class="score">{{ gameState.score.eastWest }}</div>
       </div>
     </div>
@@ -177,11 +177,11 @@
       
       <div class="final-scores">
         <div class="final-team">
-          <h3>Nord-Sud</h3>
+          <h3>{{ getTeamNames('northSouth') }}</h3>
           <div class="final-points">{{ gameState.finalScore.northSouth }}</div>
         </div>
         <div class="final-team">
-          <h3>Est-Ovest</h3>
+          <h3>{{ getTeamNames('eastWest') }}</h3>
           <div class="final-points">{{ gameState.finalScore.eastWest }}</div>
         </div>
       </div>

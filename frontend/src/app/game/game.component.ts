@@ -148,6 +148,22 @@ this.subscriptions.push(
     return labels[position] || position;
   }
 
+  getTeamNames(team: string): string {
+    if (!this.gameState?.playerNames) {
+      return team === 'northSouth' ? 'Nord-Sud' : 'Est-Ovest';
+    }
+
+    if (team === 'northSouth') {
+      const north = this.gameState.playerNames['north'] || 'Nord';
+      const south = this.gameState.playerNames['south'] || 'Sud';
+      return `${north} - ${south}`;
+    } else {
+      const east = this.gameState.playerNames['east'] || 'Est';
+      const west = this.gameState.playerNames['west'] || 'Ovest';
+      return `${east} - ${west}`;
+    }
+  }
+
   getContractTeam(): string {
     if (!this.gameState?.contract) return '';
     return this.gameState.contract.player === 'north' || this.gameState.contract.player === 'south' 

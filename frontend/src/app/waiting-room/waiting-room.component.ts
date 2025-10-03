@@ -15,6 +15,7 @@ export class WaitingRoomComponent implements OnInit, OnDestroy {
   roomCode = '';
   roomState: any = null;
   mySocketId = '';
+  myPlayerName = '';
   positions = ['north', 'east', 'south', 'west'];
   positionLabels: any = {
     north: 'Nord',
@@ -46,7 +47,15 @@ export class WaitingRoomComponent implements OnInit, OnDestroy {
         console.log('Room State:', state);
         console.log('Host:', state.host);
         console.log('My ID:', this.mySocketId);
-        
+
+        // Trova il nome del giocatore corrente
+        for (let pos in state.players) {
+          if (state.players[pos]?.id === this.mySocketId) {
+            this.myPlayerName = state.players[pos].name;
+            break;
+          }
+        }
+
         if (state.state === 'playing') {
           this.router.navigate(['/game', this.roomCode]);
         }
@@ -100,11 +109,15 @@ export class WaitingRoomComponent implements OnInit, OnDestroy {
 
   getPositionDisplay(position: string): string {
     if (!this.roomState) return '';
-    
+
     const player = this.roomState.players[position];
     const isBot = this.roomState.bots[position];
 
     if (player) {
+      // Se è il giocatore corrente, mostra "Tu (Nome)"
+      if (player.id === this.mySocketId) {
+        return `Tu (${player.name})`;
+      }
       return player.name;
     } else if (isBot) {
       return '🤖 BOT';
