@@ -156,7 +156,7 @@
           <div
             class="speech-bubble"
             *ngIf="shouldShowSpeechBubble(position)"
-            [class.with-image]="gameState.lastSpeechBubble?.isJackOfTrump"
+            [class.with-image]="gameState.lastSpeechBubble?.isJackOfTrump || gameState.lastSpeechBubble?.isNineOfTrump"
           >
             <img
               *ngIf="gameState.lastSpeechBubble?.isJackOfTrump"
@@ -164,7 +164,13 @@
               alt="Jack of Trump"
               class="subject-img-bubble"
             >
-            <span *ngIf="!gameState.lastSpeechBubble?.isJackOfTrump">
+            <img
+              *ngIf="gameState.lastSpeechBubble?.isNineOfTrump"
+              src="assets/lory.png"
+              alt="Nine of Trump"
+              class="subject-img-bubble"
+            >
+            <span *ngIf="!gameState.lastSpeechBubble?.isJackOfTrump && !gameState.lastSpeechBubble?.isNineOfTrump">
               {{ gameState.lastSpeechBubble?.message }}
             </span>
           </div>

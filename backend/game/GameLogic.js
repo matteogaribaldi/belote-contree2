@@ -50,7 +50,7 @@ class GameLogic {
     return points;
   }
 
-  isValidPlay(card, hand, trick, trump) {
+  isValidPlay(card, hand, trick, trump, currentPlayer) {
     // Prima carta del trick
     if (Object.keys(trick).length === 0) {
       return true;
@@ -68,7 +68,7 @@ class GameLogic {
     // Se non ho il seme
     if (!hasSuit) {
       const hasTrump = hand.some(c => c.suit === trump);
-      const partnerWinning = this.isPartnerWinning(trick, trump, leadSuit);
+      const partnerWinning = this.isPartnerWinning(trick, trump, leadSuit, currentPlayer);
 
       // Se ho atout e il partner non sta vincendo, devo giocare atout
       if (hasTrump && !partnerWinning && card.suit !== trump) {
@@ -79,12 +79,12 @@ class GameLogic {
       if (card.suit === trump) {
         const trumpsInTrick = Object.values(trick).filter(c => c.suit === trump);
         if (trumpsInTrick.length > 0) {
-          const highestTrump = trumpsInTrick.reduce((max, c) => 
+          const highestTrump = trumpsInTrick.reduce((max, c) =>
             this.deck.getCardOrder(c, trump) > this.deck.getCardOrder(max, trump) ? c : max
           );
-          
-          const canSurpass = hand.some(c => 
-            c.suit === trump && 
+
+          const canSurpass = hand.some(c =>
+            c.suit === trump &&
             this.deck.getCardOrder(c, trump) > this.deck.getCardOrder(highestTrump, trump)
           );
 
@@ -98,11 +98,10 @@ class GameLogic {
     return true;
   }
 
-  isPartnerWinning(trick, trump, leadSuit) {
+  isPartnerWinning(trick, trump, leadSuit, currentPlayer) {
     const players = Object.keys(trick);
     if (players.length === 0) return false;
 
-    const currentPlayer = players[players.length - 1];
     const partner = this.getPartner(currentPlayer);
 
     if (!trick[partner]) return false;

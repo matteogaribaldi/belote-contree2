@@ -253,7 +253,7 @@ class BotPlayer {
   playCard(hand, trick, trump, position, contract) {
     // Trova tutte le carte valide
     const validCards = hand.filter(card =>
-      this.gameLogic.isValidPlay(card, hand, trick, trump)
+      this.gameLogic.isValidPlay(card, hand, trick, trump, position)
     );
 
     if (validCards.length === 0) {

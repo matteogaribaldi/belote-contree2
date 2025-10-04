@@ -396,7 +396,7 @@ playCard(socket, roomCode, card, botPosition = null) {
       return;
     }
 
-    if (!this.gameLogic.isValidPlay(card, hand, room.game.currentTrick, room.game.trump)) {
+    if (!this.gameLogic.isValidPlay(card, hand, room.game.currentTrick, room.game.trump, position)) {
       socket.emit('error', { message: 'Carta non valida' });
       return;
     }
@@ -415,11 +415,13 @@ playCard(socket, roomCode, card, botPosition = null) {
     const speechBubble = this.generateSpeechBubble(card, room.game.currentTrick, room.game.trump);
     if (speechBubble) {
       const isJackOfTrump = card.rank === 'J' && card.suit === room.game.trump;
+      const isNineOfTrump = card.rank === '9' && card.suit === room.game.trump;
       room.game.lastSpeechBubble = {
         position,
         message: speechBubble,
         timestamp: Date.now(),
-        isJackOfTrump
+        isJackOfTrump,
+        isNineOfTrump
       };
     }
 
