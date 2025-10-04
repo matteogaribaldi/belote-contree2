@@ -250,7 +250,7 @@ class BotPlayer {
     return this.getPartnerPosition(botPosition) === bidderPosition;
   }
 
-  playCard(hand, trick, trump, position) {
+  playCard(hand, trick, trump, position, contract) {
     // Trova tutte le carte valide
     const validCards = hand.filter(card =>
       this.gameLogic.isValidPlay(card, hand, trick, trump)
@@ -261,9 +261,179 @@ class BotPlayer {
       return hand[0]; // Fallback
     }
 
-    // Gioca una carta casuale tra quelle valide
-    const randomIndex = Math.floor(Math.random() * validCards.length);
-    return validCards[randomIndex];
+    // Se c'è una sola carta valida, giocala
+    if (validCards.length === 1) {
+      return validCards[0];
+    }
+
+    // Determina se siamo la squadra che ha vinto il contratto
+    const contractPlayer = contract ? contract.player : null;
+    const isAttacking = this.isOnContractTeam(position, contractPlayer);
+
+    // Situazione del trick
+    const isFirstCard = Object.keys(trick).length === 0;
+    const partnerWinning = this.gameLogic.isPartnerWinning(trick, trump, this.getLeadSuit(trick));
+    const currentWinner = this.gameLogic.determineWinner(trick, trump, this.getLeadSuit(trick));
+    const weAreWinning = currentWinner ? this.isOnSameTeam(position, currentWinner) : false;
+
+    // STRATEGIA: Scegli la carta migliore basandoti sulla situazione
+    if (isFirstCard) {
+      return this.chooseOpeningCard(validCards, trump, isAttacking, hand);
+    } else if (weAreWinning) {
+      return this.chooseDefensiveCard(validCards, trump);
+    } else {
+      return this.chooseTakingCard(validCards, trick, trump, isAttacking);
+    }
+  }
+
+  // Scelta carta di apertura
+  chooseOpeningCard(validCards, trump, isAttacking, hand) {
+    if (isAttacking) {
+      const trumpCards = hand.filter(c => c.suit === trump);
+      const trumpCount = trumpCards.length;
+
+      // STRATEGIA ATOUT: Gioca 1-2 giri di atout se ne hai abbastanza
+      // per ripulire le mani avversarie - MA SOLO SE PUOI PRENDERE SICURO
+      if (trumpCount >= 3) {
+        const validTrumps = validCards.filter(c => c.suit === trump);
+        if (validTrumps.length > 0) {
+          // Se ho il J, giocalo subito per prendere sicuro
+          const jack = validTrumps.find(c => c.rank === 'J');
+          if (jack) return jack;
+
+          // Se ho il 9 MA NON il J, giocalo solo se ho anche carte di controllo
+          const nine = validTrumps.find(c => c.rank === '9');
+          if (nine && trumpCount >= 4) return nine;
+
+          // Se ho A+9 insieme, posso giocare A (tanto poi prendo con 9)
+          const ace = validTrumps.find(c => c.rank === 'A');
+          if (ace && nine) return ace;
+
+          // Altrimenti NON giocare atout se rischi di perdere punti
+          // (es: se ho solo A o solo 10, un avversario potrebbe avere J o 9)
+        }
+      }
+
+      // Dopo che hai giocato atout, gioca assi di semi laterali (ora sono sicuri)
+      const nonTrumpAces = validCards.filter(c => c.suit !== trump && c.rank === 'A');
+      if (nonTrumpAces.length > 0) return nonTrumpAces[0];
+
+      // Poi 10 laterali
+      const nonTrumpTens = validCards.filter(c => c.suit !== trump && c.rank === '10');
+      if (nonTrumpTens.length > 0) return nonTrumpTens[0];
+
+      // Altrimenti carta alta qualsiasi
+      const strongCards = validCards.filter(c => ['A', '10', 'K'].includes(c.rank));
+      if (strongCards.length > 0) return strongCards[0];
+    } else {
+      // Se difendo, preferisco carte basse (non sprecare atout)
+      const nonTrumpCards = validCards.filter(c => c.suit !== trump);
+      if (nonTrumpCards.length > 0) {
+        // Preferisco carte basse
+        const lowCards = nonTrumpCards.filter(c => ['7', '8', '9'].includes(c.rank));
+        if (lowCards.length > 0) return lowCards[0];
+
+        return nonTrumpCards[0];
+      }
+    }
+
+    // Fallback: carta random
+    return validCards[Math.floor(Math.random() * validCards.length)];
+  }
+
+  // Scelta carta difensiva (quando stiamo vincendo)
+  chooseDefensiveCard(validCards, trump) {
+    // Gioca la carta più bassa per conservare le alte
+    const nonTrumpCards = validCards.filter(c => c.suit !== trump);
+
+    if (nonTrumpCards.length > 0) {
+      // Ordina per valore crescente e prendi la più bassa
+      const sorted = nonTrumpCards.sort((a, b) => {
+        const rankOrder = { '7': 0, '8': 1, '9': 2, 'J': 3, 'Q': 4, 'K': 5, '10': 6, 'A': 7 };
+        return rankOrder[a.rank] - rankOrder[b.rank];
+      });
+      return sorted[0];
+    }
+
+    // Se ho solo atout, gioca il più basso
+    const sorted = validCards.sort((a, b) =>
+      this.gameLogic.deck.getCardOrder(a, trump) - this.gameLogic.deck.getCardOrder(b, trump)
+    );
+    return sorted[0];
+  }
+
+  // Scelta carta per prendere la mano
+  chooseTakingCard(validCards, trick, trump, isAttacking) {
+    const currentWinningCard = this.getCurrentWinningCard(trick, trump);
+
+    // Trova carte che possono vincere
+    const winningCards = validCards.filter(c =>
+      this.canBeat(c, currentWinningCard, trump, this.getLeadSuit(trick))
+    );
+
+    if (winningCards.length > 0) {
+      if (isAttacking) {
+        // Se attacco, prendi con la carta più forte possibile
+        const sorted = winningCards.sort((a, b) =>
+          this.gameLogic.deck.getCardOrder(b, trump) - this.gameLogic.deck.getCardOrder(a, trump)
+        );
+        return sorted[0];
+      } else {
+        // Se difendo, prendi con la carta più debole che vince
+        const sorted = winningCards.sort((a, b) =>
+          this.gameLogic.deck.getCardOrder(a, trump) - this.gameLogic.deck.getCardOrder(b, trump)
+        );
+        return sorted[0];
+      }
+    }
+
+    // Non posso vincere: gioca la carta più bassa
+    return this.chooseDefensiveCard(validCards, trump);
+  }
+
+  // Helper: determina se siamo nella squadra che ha il contratto
+  isOnContractTeam(position, contractPlayer) {
+    if (!contractPlayer) return false;
+    return this.isOnSameTeam(position, contractPlayer);
+  }
+
+  // Helper: determina se due posizioni sono nella stessa squadra
+  isOnSameTeam(pos1, pos2) {
+    const team1 = (pos1 === 'north' || pos1 === 'south') ? 'NS' : 'EW';
+    const team2 = (pos2 === 'north' || pos2 === 'south') ? 'NS' : 'EW';
+    return team1 === team2;
+  }
+
+  // Helper: ottiene il seme di apertura del trick
+  getLeadSuit(trick) {
+    const firstPlayer = Object.keys(trick)[0];
+    return firstPlayer ? trick[firstPlayer].suit : null;
+  }
+
+  // Helper: ottiene la carta attualmente vincente
+  getCurrentWinningCard(trick, trump) {
+    const winner = this.gameLogic.determineWinner(trick, trump, this.getLeadSuit(trick));
+    return winner ? trick[winner] : null;
+  }
+
+  // Helper: determina se una carta può battere un'altra
+  canBeat(card, targetCard, trump, leadSuit) {
+    if (!targetCard) return true;
+
+    // Trump batte sempre non-trump
+    if (card.suit === trump && targetCard.suit !== trump) return true;
+    if (card.suit !== trump && targetCard.suit === trump) return false;
+
+    // Stesso seme: confronta ordine
+    if (card.suit === targetCard.suit) {
+      return this.gameLogic.deck.getCardOrder(card, trump) >
+             this.gameLogic.deck.getCardOrder(targetCard, trump);
+    }
+
+    // Seme diverso (nessuno è trump): la carta non del seme di apertura non vince
+    if (card.suit !== leadSuit) return false;
+
+    return false;
   }
 }
 

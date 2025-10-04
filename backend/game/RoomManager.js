@@ -597,8 +597,8 @@ completeTrick(room) {
     if (!this.isBot(room, position)) return;
 
     const hand = room.game.hands[position];
-    const card = this.botPlayer.playCard(hand, room.game.currentTrick, room.game.trump, position);
-    
+    const card = this.botPlayer.playCard(hand, room.game.currentTrick, room.game.trump, position, room.game.contract);
+
      this.playCard({ id: 'bot' }, room.code, card, position);
   }
 
