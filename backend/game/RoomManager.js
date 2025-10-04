@@ -636,12 +636,16 @@ completeTrick(room) {
   }
 
   generateSpeechBubble(card, currentTrick, trump) {
-    // 60% probabilità di mostrare un fumetto (aumentata da 30%)
-    if (Math.random() > 0.6) return null;
+    const isTrump = card.suit === trump;
+    const isJackOfTrump = card.rank === 'J' && isTrump;
+    const isNineOfTrump = card.rank === '9' && isTrump;
+
+    // Mostra sempre il fumetto per Jack e 9 di atout
+    // Altrimenti 60% probabilità di mostrare un fumetto
+    if (!isJackOfTrump && !isNineOfTrump && Math.random() > 0.6) return null;
 
     const leadCard = currentTrick[Object.keys(currentTrick)[0]];
     const isFirstCard = Object.keys(currentTrick).length === 0;
-    const isTrump = card.suit === trump;
     const leadSuit = leadCard ? leadCard.suit : null;
     const isGoodCard = ['A', 'J', '10', 'K'].includes(card.rank);
 
