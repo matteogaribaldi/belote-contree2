@@ -241,6 +241,22 @@ this.subscriptions.push(
     this.socketService.placeBid(this.roomCode, { type: 'surcontre' });
   }
 
+  canCappotto(): boolean {
+    if (!this.gameState || !this.gameState.bids) return false;
+
+    // Controlla se nessuno ha ancora fatto un'offerta (solo pass finora)
+    const hasBid = this.gameState.bids.some((b: any) => b.bid.type === 'bid' || b.bid.type === 'cappotto');
+    return !hasBid;
+  }
+
+  placeCappotto() {
+    if (!this.isMyTurn() || !this.canCappotto()) return;
+
+    // Il cappotto viene dichiarato senza seme (si giocano tutte le mani)
+    this.socketService.placeBid(this.roomCode, { type: 'cappotto', points: 250 });
+    this.audioService.play('bid');
+  }
+
   getTrickPosition(position: string): string {
     const positions: any = {
       north: 'top',

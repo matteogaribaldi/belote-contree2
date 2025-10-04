@@ -17,7 +17,12 @@
           </span>
         </div>
         <div class="contract-details">
-          Contratto: {{ gameState.contract.bid.points }} punti
+          <span *ngIf="gameState.contract.bid.type === 'cappotto'">
+            Contratto: Cappotto (250 punti)
+          </span>
+          <span *ngIf="gameState.contract.bid.type !== 'cappotto'">
+            Contratto: {{ gameState.contract.bid.points }} punti
+          </span>
           <br>
           <small>{{ getPositionLabel(gameState.contract.player) }}</small>
         </div>
@@ -46,6 +51,7 @@
               {{ getSuitSymbol(bidEntry.bid.suit) }}
             </span>
           </span>
+          <span *ngIf="bidEntry.bid.type === 'cappotto'" class="cappotto-badge">Cappotto (250)</span>
           <span *ngIf="bidEntry.bid.type === 'contro'" class="contro-badge">Contro</span>
           <span *ngIf="bidEntry.bid.type === 'surcontre'" class="surcontre-badge">Surcontre</span>
         </div>
@@ -87,6 +93,13 @@
       </div>
 
       <div class="special-bids">
+        <button
+          class="btn-cappotto"
+          *ngIf="canCappotto()"
+          (click)="placeCappotto()"
+        >
+          Cappotto (250)
+        </button>
         <button
           class="btn-contro"
           *ngIf="canContro()"

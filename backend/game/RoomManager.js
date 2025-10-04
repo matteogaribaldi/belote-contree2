@@ -152,6 +152,9 @@ class RoomManager {
   initializeGame(room, isNewHand = false) {
   const hands = this.deck.deal();
 
+  // Reset stato bot per nuova mano
+  this.botPlayer.resetForNewHand();
+
   // Determina il dealer
   let dealer, firstPlayer;
   if (!isNewHand || !room.game) {
@@ -227,11 +230,11 @@ room.game = {
   // Conta i pass consecutivi
   let consecutivePasses = 0;
   let lastBidExists = false;
-  
+
   for (let i = room.game.bids.length - 1; i >= 0; i--) {
     if (room.game.bids[i].bid.type === 'pass') {
       consecutivePasses++;
-    } else if (room.game.bids[i].bid.type === 'bid') {
+    } else if (room.game.bids[i].bid.type === 'bid' || room.game.bids[i].bid.type === 'cappotto') {
       lastBidExists = true;
       break;
     }
@@ -239,20 +242,28 @@ room.game = {
 
   // Se ci sono 3 pass consecutivi dopo una puntata, l'asta è chiusa
   if (lastBidExists && consecutivePasses === 3) {
-    const lastBid = [...room.game.bids].reverse().find(b => b.bid.type === 'bid');
+    const lastBid = [...room.game.bids].reverse().find(b => b.bid.type === 'bid' || b.bid.type === 'cappotto');
     room.game.contract = lastBid;
-    room.game.trump = lastBid.bid.suit;
+
+    // Per il cappotto, scegliamo un seme di trump casuale (potrebbe essere il primo seme della mano del dichiarante)
+    if (lastBid.bid.type === 'cappotto') {
+      const declarerHand = room.game.hands[lastBid.player];
+      room.game.trump = declarerHand[0].suit; // Usa il seme della prima carta
+    } else {
+      room.game.trump = lastBid.bid.suit;
+    }
+
     room.game.biddingPhase = false;
     room.game.currentPlayer = this.gameLogic.getNextPlayer(room.game.dealer);
-    
+
     this.broadcastGameState(room.code);
-    
+
     if (this.isBot(room, room.game.currentPlayer)) {
       setTimeout(() => this.botPlay(room, room.game.currentPlayer), 1000);
     }
     return;
   }
-  
+
   // Se tutti e 4 hanno passato senza puntate, ridistribuisci
   if (room.game.bids.length === 4 && !lastBidExists) {
     this.initializeGame(room);
@@ -274,6 +285,13 @@ room.game = {
     return true;
   }
 
+  // Se è cappotto
+  if (bid.type === 'cappotto') {
+    // Cappotto può essere dichiarato solo se nessuno ha ancora fatto offerte
+    const hasPreviousBid = game.bids.some(b => b.bid.type === 'bid' || b.bid.type === 'cappotto');
+    return !hasPreviousBid;
+  }
+
   // Se è una puntata
   if (bid.type === 'bid') {
     // Controlla che i punti siano validi
@@ -289,7 +307,7 @@ room.game = {
     }
 
     // Trova l'ultima puntata (non pass)
-    const lastBid = [...game.bids].reverse().find(b => b.bid.type === 'bid');
+    const lastBid = [...game.bids].reverse().find(b => b.bid.type === 'bid' || b.bid.type === 'cappotto');
 
     // Se c'è già una puntata, la nuova deve essere superiore di almeno 10 punti
     if (lastBid && bid.points <= lastBid.bid.points) {
@@ -466,6 +484,7 @@ completeTrick(room) {
 
     const contractTeam = room.game.contract.player === 'north' || room.game.contract.player === 'south'
       ? 'northSouth' : 'eastWest';
+    const isCappotto = room.game.contract.bid.type === 'cappotto';
     const contractPoints = room.game.contract.bid.points;
     const teamScore = room.game.score[contractTeam];
 
@@ -479,18 +498,39 @@ completeTrick(room) {
 
     let finalScore = { northSouth: 0, eastWest: 0 };
 
-    if (teamScore >= contractPoints) {
-      finalScore[contractTeam] = room.game.score[contractTeam] * multiplier;
+    // Gestione cappotto
+    if (isCappotto) {
       const otherTeam = contractTeam === 'northSouth' ? 'eastWest' : 'northSouth';
-      finalScore[otherTeam] = room.game.score[otherTeam] * multiplier;
+      const madeAllTricks = room.game.tricks.every(trick => {
+        const winner = trick.winner;
+        const winnerTeam = (winner === 'north' || winner === 'south') ? 'northSouth' : 'eastWest';
+        return winnerTeam === contractTeam;
+      });
+
+      if (madeAllTricks) {
+        // Cappotto riuscito: 250 punti alla squadra che ha dichiarato
+        finalScore[contractTeam] = 250 * multiplier;
+        finalScore[otherTeam] = 0;
+      } else {
+        // Cappotto fallito: 250 punti alla squadra avversaria
+        finalScore[otherTeam] = 250 * multiplier;
+        finalScore[contractTeam] = 0;
+      }
     } else {
-      const otherTeam = contractTeam === 'northSouth' ? 'eastWest' : 'northSouth';
-      finalScore[otherTeam] = 162 * multiplier;
-      if (room.game.beloteRebelote && room.game.beloteRebelote.announced) {
-        const beloteTeam = room.game.beloteRebelote.player === 'north' || room.game.beloteRebelote.player === 'south'
-          ? 'northSouth' : 'eastWest';
-        if (beloteTeam !== contractTeam) {
-          finalScore[beloteTeam] += 20 * multiplier;
+      // Contratto normale
+      if (teamScore >= contractPoints) {
+        finalScore[contractTeam] = room.game.score[contractTeam] * multiplier;
+        const otherTeam = contractTeam === 'northSouth' ? 'eastWest' : 'northSouth';
+        finalScore[otherTeam] = room.game.score[otherTeam] * multiplier;
+      } else {
+        const otherTeam = contractTeam === 'northSouth' ? 'eastWest' : 'northSouth';
+        finalScore[otherTeam] = 162 * multiplier;
+        if (room.game.beloteRebelote && room.game.beloteRebelote.announced) {
+          const beloteTeam = room.game.beloteRebelote.player === 'north' || room.game.beloteRebelote.player === 'south'
+            ? 'northSouth' : 'eastWest';
+          if (beloteTeam !== contractTeam) {
+            finalScore[beloteTeam] += 20 * multiplier;
+          }
         }
       }
     }
@@ -544,11 +584,12 @@ completeTrick(room) {
 
   const hand = room.game.hands[position];
   const currentBid = [...room.game.bids].reverse().find(b => b.bid.type === 'bid');
+  const allBids = room.game.bids; // Passa tutte le puntate per analisi
 
   console.log(`Bot ${position} sta facendo bid...`);
-  const bid = this.botPlayer.makeBid(hand, currentBid, position);
+  const bid = this.botPlayer.makeBid(hand, currentBid, position, allBids);
   console.log(`Bot ${position} ha scelto:`, bid);
-  
+
   this.placeBid({ id: 'bot' }, room.code, bid, position);
  }
 
