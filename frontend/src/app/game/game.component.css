@@ -985,3 +985,44 @@
 .speech-bubble-container.position-east .speech-bubble::after{content:'';position:absolute;right:100%;top:50%;transform:translateY(-50%);border:8px solid transparent;border-right-color:#fff}
 .speech-bubble-container.position-west .speech-bubble::after{content:'';position:absolute;left:100%;top:50%;transform:translateY(-50%);border:8px solid transparent;border-left-color:#fff}
 @media (max-width:768px){.speech-bubble{font-size:11px;padding:6px 10px}}
+
+/* Subject image in speech bubble for Jack of Trump */
+.speech-bubble.with-image {
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 3px solid #d4af37;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(212, 175, 55, 0.3);
+  border-radius: 12px;
+}
+
+.subject-img-bubble {
+  width: 120px;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  animation: jackPop 0.4s ease-out;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes jackPop {
+  0% {
+    transform: scale(0.3) rotate(-10deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15) rotate(5deg);
+  }
+  80% {
+    transform: scale(0.95) rotate(-2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@media (max-width:768px) {
+  .subject-img-bubble {
+    width: 90px;
+  }
+}

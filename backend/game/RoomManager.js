@@ -224,6 +224,27 @@ room.game = {
       room.game.contro = true;
     } else if (bid.type === 'surcontre') {
       room.game.surcontre = true;
+
+      // Dopo un surcontro, l'asta si chiude immediatamente
+      const lastBid = [...room.game.bids].reverse().find(b => b.bid.type === 'bid' || b.bid.type === 'cappotto');
+      room.game.contract = lastBid;
+
+      if (lastBid.bid.type === 'cappotto') {
+        const declarerHand = room.game.hands[lastBid.player];
+        room.game.trump = declarerHand[0].suit;
+      } else {
+        room.game.trump = lastBid.bid.suit;
+      }
+
+      room.game.biddingPhase = false;
+      room.game.currentPlayer = this.gameLogic.getNextPlayer(room.game.dealer);
+
+      this.broadcastGameState(room.code);
+
+      if (this.isBot(room, room.game.currentPlayer)) {
+        setTimeout(() => this.botPlay(room, room.game.currentPlayer), 1000);
+      }
+      return;
     }
 
     if (bid.type === 'pass') {
@@ -390,10 +411,16 @@ playCard(socket, roomCode, card, botPosition = null) {
     hand.splice(cardIndex, 1);
     room.game.currentTrick[position] = card;
 
-    // Genera fumetto (30% probabilità)
+    // Genera fumetto (60% probabilità)
     const speechBubble = this.generateSpeechBubble(card, room.game.currentTrick, room.game.trump);
     if (speechBubble) {
-      room.game.lastSpeechBubble = { position, message: speechBubble, timestamp: Date.now() };
+      const isJackOfTrump = card.rank === 'J' && card.suit === room.game.trump;
+      room.game.lastSpeechBubble = {
+        position,
+        message: speechBubble,
+        timestamp: Date.now(),
+        isJackOfTrump
+      };
     }
 
     console.log(`Dopo rimozione: ${position} ha ${hand.length} carte rimanenti`);
@@ -607,19 +634,20 @@ completeTrick(room) {
   }
 
   generateSpeechBubble(card, currentTrick, trump) {
-    // 30% probabilità di mostrare un fumetto
-    if (Math.random() > 0.3) return null;
+    // 60% probabilità di mostrare un fumetto (aumentata da 30%)
+    if (Math.random() > 0.6) return null;
 
     const leadCard = currentTrick[Object.keys(currentTrick)[0]];
     const isFirstCard = Object.keys(currentTrick).length === 0;
     const isTrump = card.suit === trump;
     const leadSuit = leadCard ? leadCard.suit : null;
+    const isGoodCard = ['A', 'J', '10', 'K'].includes(card.rank);
 
     const messages = [];
 
     // Taglio (gioco atout quando il seme di apertura è diverso)
     if (isTrump && leadSuit && leadSuit !== trump) {
-      messages.push('Taglio!', 'Atout!', 'Tajo!');
+      messages.push('Taglio!', 'Atout!', 'Tajo!', 'Arilla!', 'Rille!');
     }
 
     // Prima carta di picche
@@ -644,22 +672,37 @@ completeTrick(room) {
 
     // Gioca un 10
     if (card.rank === '10') {
-      messages.push('Maniglia!', 'Dièsc!', 'Arilla!', 'Rilliamo!');
+      messages.push('Maniglia!', 'Dièsc!', 'Arilla!', 'Rilliamo!', 'Rille!', 'Aaaaaah!', 'A bagno!');
     }
 
     // Gioca un Asso
     if (card.rank === 'A') {
-      messages.push('Asso!', 'Às!', 'Bibbaaa!', 'Babbaaa!');
+      messages.push('Asso!', 'Às!', 'Bibbaaa!', 'Babbaaa!', 'Bibaaa!', 'Eh bibi bibi!', 'Aaaaaah!', 'A bagno!');
     }
 
     // Gioca il Jack di atout
     if (card.rank === 'J' && isTrump) {
-      messages.push('Jack!', 'Valet!', 'Rillina!', 'Trillina!');
+      messages.push('Jack!', 'Valet!', 'Rillina!', 'Trillina!', 'Arilla!', 'Rille!', 'Aaaaaah!', 'Bibaaa!', 'A bagno!');
     }
 
     // Gioca il 9 di atout
     if (card.rank === '9' && isTrump) {
-      messages.push('Neu d\'atout!', 'Nove!', 'Rillina!', 'Trillina!');
+      messages.push('Neu d\'atout!', 'Nove!', 'Rillina!', 'Trillina!', 'Arilla!', 'Rille!', 'Aaaaaah!');
+    }
+
+    // Gioca un Re (buona carta)
+    if (card.rank === 'K' && isGoodCard) {
+      messages.push('Re!', 'Arilla!', 'Rille!', 'Aaaaaah!');
+    }
+
+    // Gioca picche (oltre prima carta)
+    if (!isFirstCard && card.suit === 'spades' && isGoodCard) {
+      messages.push('Picche nere!');
+    }
+
+    // Gioca cuori (oltre prima carta)
+    if (!isFirstCard && card.suit === 'hearts' && isGoodCard) {
+      messages.push('Cuppe!');
     }
 
     // Esclamazioni generiche (più rare)
