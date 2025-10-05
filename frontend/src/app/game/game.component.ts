@@ -346,10 +346,10 @@ this.subscriptions.push(
     // Mostra solo se è la posizione corretta
     if (bubble.position !== position) return false;
 
-    // Mostra per 3 secondi dopo il timestamp
+    // Mostra per 2 secondi dopo il timestamp
     const now = Date.now();
     const elapsed = now - bubble.timestamp;
-    return elapsed < 3000;
+    return elapsed < 2000;
   }
 
   toggleAudio() {

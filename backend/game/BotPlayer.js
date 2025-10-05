@@ -9,7 +9,7 @@ class BotPlayer {
     this.hasRaisedOnPartner = false;
   }
 
-  makeBid(hand, currentBid, position, allBids = []) {
+  makeBid(hand, currentBid, position, allBids = [], game = null) {
     this.position = position;
 
     // Trova il seme migliore
@@ -25,12 +25,12 @@ class BotPlayer {
 
     // CASO 1: Partner ha già puntato
     if (partnerBid && partnerBid.bid.type === 'bid') {
-      return this.handlePartnerBid(hand, partnerBid, opponentsBid, lastBid);
+      return this.handlePartnerBid(hand, partnerBid, opponentsBid, lastBid, game);
     }
 
     // CASO 2: Avversari hanno puntato
     if (opponentsBid && opponentsBid.bid.type === 'bid') {
-      return this.handleOpponentBid(hand, opponentsBid, estimate, bestSuit);
+      return this.handleOpponentBid(hand, opponentsBid, estimate, bestSuit, game);
     }
 
     // CASO 3: Nessuno ha ancora puntato (o solo passi)
@@ -38,7 +38,7 @@ class BotPlayer {
   }
 
   // CASO 1: Gestione puntata partner
-  handlePartnerBid(hand, partnerBid, opponentsBid, lastBid) {
+  handlePartnerBid(hand, partnerBid, opponentsBid, lastBid, game) {
     const partnerSuit = partnerBid.bid.suit;
     const partnerPoints = partnerBid.bid.points;
 
@@ -67,7 +67,8 @@ class BotPlayer {
     // CASO 1B: Avversari hanno rilanciato su partner
     if (opponentsBid && opponentsBid.bid.type === 'bid') {
       const defensiveStrength = this.evaluateDefense(hand, opponentsBid.bid.suit);
-      if (defensiveStrength >= 40) {
+      // Fai contro solo se non è già stato fatto e sei abbastanza forte
+      if (defensiveStrength >= 40 && !game.contro) {
         return { type: 'contro' };
       }
     }
@@ -77,7 +78,7 @@ class BotPlayer {
   }
 
   // CASO 2: Gestione puntata avversari
-  handleOpponentBid(hand, opponentsBid, estimate, bestSuit) {
+  handleOpponentBid(hand, opponentsBid, estimate, bestSuit, game) {
     const opponentPoints = opponentsBid.bid.points;
     const opponentSuit = opponentsBid.bid.suit;
 
@@ -93,9 +94,9 @@ class BotPlayer {
       }
     }
 
-    // Se ho mano difensiva forte, faccio contro
+    // Se ho mano difensiva forte, faccio contro (solo se non è già stato fatto)
     const defensiveStrength = this.evaluateDefense(hand, opponentSuit);
-    if (defensiveStrength >= 40) {
+    if (defensiveStrength >= 40 && !game.contro) {
       return { type: 'contro' };
     }
 

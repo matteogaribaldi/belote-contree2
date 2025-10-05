@@ -254,6 +254,10 @@ room.game = {
         setTimeout(() => this.botPlay(room, room.game.currentPlayer), 1000);
       }
       return;
+    } else if (bid.type === 'bid' || bid.type === 'cappotto') {
+      // Se qualcuno fa una nuova offerta dopo un contro, resettiamo contro e surcontre
+      room.game.contro = false;
+      room.game.surcontre = false;
     }
 
     if (bid.type === 'pass') {
@@ -614,7 +618,7 @@ completeTrick(room) {
 
  botBid(room, position) {
   console.log(`botBid chiamato per posizione: ${position}`);
-  
+
   if (!this.isBot(room, position)) {
     console.log(`${position} non è un bot!`);
     return;
@@ -625,7 +629,7 @@ completeTrick(room) {
   const allBids = room.game.bids; // Passa tutte le puntate per analisi
 
   console.log(`Bot ${position} sta facendo bid...`);
-  const bid = this.botPlayer.makeBid(hand, currentBid, position, allBids);
+  const bid = this.botPlayer.makeBid(hand, currentBid, position, allBids, room.game);
   console.log(`Bot ${position} ha scelto:`, bid);
 
   this.placeBid({ id: 'bot' }, room.code, bid, position);
