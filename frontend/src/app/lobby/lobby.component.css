@@ -16,6 +16,17 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
+.champions-logo {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.champions-img {
+  max-width: 50%;
+  height: auto;
+  opacity: 0.9;
+}
+
 .header-with-info {
   display: flex;
   align-items: center;
