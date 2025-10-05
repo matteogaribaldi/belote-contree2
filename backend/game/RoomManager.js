@@ -20,6 +20,14 @@ class RoomManager {
   }
 
   createRoom(socket, playerName) {
+    // Controlla se esiste già una stanza in waiting
+    const existingRoom = Array.from(this.rooms.values()).find(r => r.state === 'waiting');
+
+    if (existingRoom) {
+      socket.emit('error', { message: 'Esiste già una stanza in attesa. Unisciti a quella invece di crearne una nuova.' });
+      return;
+    }
+
     const roomCode = this.generateRoomCode();
 
     const room = {
@@ -65,6 +73,16 @@ class RoomManager {
   }
 
   joinRoom(socket, roomCode, playerName) {
+    // Se non viene fornito un roomCode, trova l'unica stanza disponibile
+    if (!roomCode) {
+      const waitingRoom = Array.from(this.rooms.values()).find(r => r.state === 'waiting');
+      if (!waitingRoom) {
+        socket.emit('error', { message: 'Nessuna stanza disponibile' });
+        return;
+      }
+      roomCode = waitingRoom.code;
+    }
+
     const room = this.rooms.get(roomCode);
 
     if (!room) {

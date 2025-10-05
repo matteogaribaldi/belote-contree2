@@ -8,52 +8,28 @@
     </div>
 
     <div class="input-group">
-      <input 
-        type="text" 
-        [(ngModel)]="playerName" 
+      <input
+        type="text"
+        [(ngModel)]="playerName"
         placeholder="Il tuo nome"
         maxlength="20"
-        (keyup.enter)="!showJoinForm ? createRoom() : joinRoom()"
+        (keyup.enter)="activeRooms.length === 0 ? createRoom() : joinRoom()"
       />
     </div>
 
-    <div class="button-group" *ngIf="!showJoinForm">
+    <!-- Se NON ci sono stanze attive, mostra solo "Crea Partita" -->
+    <div class="button-group" *ngIf="activeRooms.length === 0">
       <button class="btn-primary" (click)="createRoom()" [disabled]="!playerName.trim()">
         Crea Partita
       </button>
-      <button class="btn-secondary" (click)="toggleJoinForm()">
-        Unisciti a Partita
-      </button>
     </div>
 
-    <div class="join-form" *ngIf="showJoinForm">
-      <div class="input-group">
-        <input
-          type="text"
-          [(ngModel)]="roomCode"
-          placeholder="Codice stanza"
-          maxlength="8"
-          (keyup.enter)="joinRoom()"
-          style="text-transform: uppercase"
-        />
-      </div>
-      <div class="button-group">
-        <button class="btn-primary" (click)="joinRoom()" [disabled]="!playerName.trim() || !roomCode.trim()">
-          Entra
-        </button>
-        <button class="btn-secondary" (click)="toggleJoinForm()">
-          Annulla
-        </button>
-      </div>
-
-      <div class="active-rooms" *ngIf="activeRooms.length > 0">
-        <h3>Partite Attive</h3>
+    <!-- Se c'è una stanza attiva, mostra solo "Unisciti a Partita" e le info della stanza -->
+    <div *ngIf="activeRooms.length > 0">
+      <div class="active-rooms">
+        <h3>Partita Disponibile</h3>
         <div class="room-list">
-          <div
-            class="room-item"
-            *ngFor="let room of activeRooms"
-            (click)="joinActiveRoom(room.code)"
-          >
+          <div class="room-item" *ngFor="let room of activeRooms">
             <div class="room-info">
               <span class="room-code">{{ room.code }}</span>
               <span class="room-host">Host: {{ room.hostName }}</span>
@@ -61,6 +37,11 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="button-group">
+        <button class="btn-primary" (click)="joinRoom()" [disabled]="!playerName.trim()">
+          Unisciti a Partita
+        </button>
       </div>
     </div>
   </div>

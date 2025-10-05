@@ -50,9 +50,19 @@ export class LobbyComponent implements OnInit {
   }
 
   joinRoom() {
-    if (this.playerName.trim() && this.roomCode.trim()) {
+    if (this.playerName.trim()) {
       localStorage.setItem('belote_playerName', this.playerName.trim());
-      this.socketService.joinRoom(this.roomCode.trim().toUpperCase(), this.playerName.trim());
+      // Se c'è una stanza disponibile, entra automaticamente in quella
+      if (this.activeRooms.length > 0) {
+        this.socketService.joinRoom(this.activeRooms[0].code, this.playerName.trim());
+      } else {
+        // Altrimenti usa il roomCode manuale se fornito
+        if (this.roomCode.trim()) {
+          this.socketService.joinRoom(this.roomCode.trim().toUpperCase(), this.playerName.trim());
+        } else {
+          alert('Nessuna stanza disponibile');
+        }
+      }
     }
   }
 
