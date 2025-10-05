@@ -66,7 +66,7 @@ class RoomManager {
 
   joinRoom(socket, roomCode, playerName) {
     const room = this.rooms.get(roomCode);
-    
+
     if (!room) {
       socket.emit('error', { message: 'Stanza non trovata' });
       return;
@@ -77,9 +77,18 @@ class RoomManager {
       return;
     }
 
+    // Controlla se ci sono giocatori reali nella stanza
+    const hasRealPlayers = Object.values(room.players).some(player => player !== null && !player.startsWith('bot-'));
+
+    // Se non ci sono giocatori reali, il nuovo giocatore diventa host
+    if (!hasRealPlayers) {
+      room.host = socket.id;
+      console.log(`${playerName} è il nuovo host della stanza ${roomCode} (nessun altro giocatore presente)`);
+    }
+
     this.playerRooms.set(socket.id, roomCode);
     room.playerNames[socket.id] = playerName;
-    
+
     socket.join(roomCode);
     socket.emit('roomJoined', { roomCode, playerName });
 
@@ -847,7 +856,20 @@ completeTrick(room) {
           }
         }
       } else {
+        // In waiting room
+        const wasHost = room.host === socket.id;
         room.players[position] = null;
+
+        // Se era l'host, assegna l'host al primo giocatore disponibile
+        if (wasHost) {
+          const newHost = Object.values(room.players).find(player => player !== null && !player.startsWith('bot-'));
+          if (newHost) {
+            room.host = newHost;
+            const newHostName = room.playerNames[newHost] || 'Giocatore';
+            console.log(`${newHostName} è il nuovo host della stanza ${roomCode}`);
+          }
+        }
+
         this.broadcastRoomState(roomCode);
         this.broadcastActiveRooms();
       }
