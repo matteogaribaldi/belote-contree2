@@ -17,14 +17,18 @@
 }
 
 .champions-logo {
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   margin-bottom: 20px;
+  overflow: visible;
 }
 
 .champions-img {
   max-width: 110%;
   height: auto;
   opacity: 0.9;
+  display: block;
 }
 
 .header-with-info {
