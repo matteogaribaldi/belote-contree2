@@ -433,27 +433,45 @@ playCard(socket, roomCode, card, botPosition = null) {
     }
 
     const beloteCheck = this.gameLogic.checkBeloteRebelote(card, hand, room.game.trump);
+    let isBelote = false;
+    let isRebelote = false;
+
     if (beloteCheck === 'belote') {
       room.game.beloteRebelote = { player: position, announced: false };
+      isBelote = true;
     } else if (beloteCheck === 'rebelote' && room.game.beloteRebelote) {
       room.game.beloteRebelote.announced = true;
+      isRebelote = true;
     }
 
     hand.splice(cardIndex, 1);
     room.game.currentTrick[position] = card;
 
-    // Genera fumetto (60% probabilità)
-    const speechBubble = this.generateSpeechBubble(card, room.game.currentTrick, room.game.trump);
-    if (speechBubble) {
-      const isJackOfTrump = card.rank === 'J' && card.suit === room.game.trump;
-      const isNineOfTrump = card.rank === '9' && card.suit === room.game.trump;
+    // Fumetto per Belote/Rebelote (priorità massima)
+    if (isBelote || isRebelote) {
       room.game.lastSpeechBubble = {
         position,
-        message: speechBubble,
+        message: isBelote ? 'Belote!' : 'Rebelote!',
         timestamp: Date.now(),
-        isJackOfTrump,
-        isNineOfTrump
+        isJackOfTrump: false,
+        isNineOfTrump: false,
+        isBelote,
+        isRebelote
       };
+    } else {
+      // Genera fumetto normale (60% probabilità)
+      const speechBubble = this.generateSpeechBubble(card, room.game.currentTrick, room.game.trump);
+      if (speechBubble) {
+        const isJackOfTrump = card.rank === 'J' && card.suit === room.game.trump;
+        const isNineOfTrump = card.rank === '9' && card.suit === room.game.trump;
+        room.game.lastSpeechBubble = {
+          position,
+          message: speechBubble,
+          timestamp: Date.now(),
+          isJackOfTrump,
+          isNineOfTrump
+        };
+      }
     }
 
     console.log(`Dopo rimozione: ${position} ha ${hand.length} carte rimanenti`);
@@ -1032,6 +1050,42 @@ completeTrick(room) {
   broadcastActiveRooms() {
     const activeRooms = this.getActiveRooms();
     this.io.emit('activeRoomsList', activeRooms);
+  }
+
+  deleteRoom(socket, roomCode) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return;
+
+    // Controlla se il richiedente è l'host
+    if (socket.id !== room.host) {
+      socket.emit('error', { message: 'Solo l\'host può cancellare il tavolo' });
+      return;
+    }
+
+    // Controlla se la partita non è già iniziata
+    if (room.state !== 'waiting') {
+      socket.emit('error', { message: 'Non puoi cancellare il tavolo durante una partita' });
+      return;
+    }
+
+    console.log(`Stanza ${roomCode} cancellata dall'host`);
+
+    // Rimuovi tutti i giocatori dalla stanza
+    for (let pos in room.players) {
+      const playerId = room.players[pos];
+      if (playerId && !playerId.startsWith('bot-')) {
+        this.playerRooms.delete(playerId);
+      }
+    }
+
+    // Elimina la stanza
+    this.rooms.delete(roomCode);
+
+    // Notifica tutti i client nella stanza
+    this.io.to(roomCode).emit('roomDeleted', { message: 'Il tavolo è stato cancellato dall\'host' });
+
+    // Aggiorna la lista delle stanze attive
+    this.broadcastActiveRooms();
   }
 }
 

@@ -1,4 +1,17 @@
 <div class="waiting-room-container">
+  <!-- Notifiche -->
+  <div class="notification"
+       *ngIf="notification"
+       [@fadeInOut]
+       [class.success]="notificationType === 'success'"
+       [class.error]="notificationType === 'error'"
+       [class.info]="notificationType === 'info'">
+    <span class="notification-icon" *ngIf="notificationType === 'success'">✅</span>
+    <span class="notification-icon" *ngIf="notificationType === 'error'">⚠️</span>
+    <span class="notification-icon" *ngIf="notificationType === 'info'">ℹ️</span>
+    <span class="notification-text">{{ notification }}</span>
+  </div>
+
   <div class="waiting-card">
     <div class="header">
       <h2>Sala d'Attesa</h2>
@@ -91,12 +104,18 @@
     </div>
 
     <div class="actions" *ngIf="isHost()">
-      <button 
+      <button
         class="btn-start"
         (click)="startGame()"
         [disabled]="!allPositionsFilled()"
       >
         Inizia Partita
+      </button>
+      <button
+        class="btn-delete"
+        (click)="deleteRoom()"
+      >
+        Cancella Tavolo
       </button>
       <p class="hint" *ngIf="!allPositionsFilled()">
         Tutti i posti devono essere occupati per iniziare
@@ -105,6 +124,12 @@
 
     <div class="waiting-message" *ngIf="!isHost()">
       <p>In attesa che l'host avvii la partita...</p>
+      <button
+        class="btn-back"
+        (click)="goBack()"
+      >
+        Torna alla Lobby
+      </button>
     </div>
   </div>
 </div>

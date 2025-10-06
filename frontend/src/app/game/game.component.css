@@ -1026,3 +1026,38 @@
     width: 90px;
   }
 }
+
+/* Belote/Rebelote speech bubble styling */
+.speech-bubble.belote-bubble {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: #000;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 10px 16px;
+  border: 3px solid #FF4500;
+  box-shadow: 0 8px 20px rgba(255, 69, 0, 0.5), 0 0 0 2px rgba(255, 215, 0, 0.5);
+  animation: belotePop 0.5s ease-out;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+@keyframes belotePop {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (max-width:768px) {
+  .speech-bubble.belote-bubble {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+}

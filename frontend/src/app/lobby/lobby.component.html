@@ -1,4 +1,10 @@
 <div class="lobby-container">
+  <!-- Notifiche -->
+  <div class="notification error" *ngIf="errorMessage" [@fadeInOut]>
+    <span class="notification-icon">⚠️</span>
+    <span class="notification-text">{{ errorMessage }}</span>
+  </div>
+
   <button class="info-btn-fixed" (click)="showInfo()" title="Informazioni">
     <span>ℹ</span>
   </button>

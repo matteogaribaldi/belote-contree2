@@ -63,6 +63,10 @@ export class SocketService {
     this.socket.emit('getActiveRooms');
   }
 
+  deleteRoom(roomCode: string) {
+    this.socket.emit('deleteRoom', roomCode);
+  }
+
   reconnect(roomCode: string, playerName: string) {
     this.socket.emit('reconnect', { roomCode, playerName });
   }
@@ -114,6 +118,12 @@ export class SocketService {
   onActiveRoomsList(): Observable<any> {
     return new Observable(observer => {
       this.socket.on('activeRoomsList', (data) => observer.next(data));
+    });
+  }
+
+  onRoomDeleted(): Observable<any> {
+    return new Observable(observer => {
+      this.socket.on('roomDeleted', (data) => observer.next(data));
     });
   }
 }

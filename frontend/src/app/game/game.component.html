@@ -157,6 +157,7 @@
             class="speech-bubble"
             *ngIf="shouldShowSpeechBubble(position)"
             [class.with-image]="gameState.lastSpeechBubble?.isJackOfTrump || gameState.lastSpeechBubble?.isNineOfTrump"
+            [class.belote-bubble]="gameState.lastSpeechBubble?.isBelote || gameState.lastSpeechBubble?.isRebelote"
           >
             <img
               *ngIf="gameState.lastSpeechBubble?.isJackOfTrump"

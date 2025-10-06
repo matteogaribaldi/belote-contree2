@@ -3,13 +3,25 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SocketService } from '../services/socket.service';
 import { Subscription } from 'rxjs';
+import { trigger, transition, style, animate } from '@angular/animations';
 
 @Component({
   selector: 'app-waiting-room',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './waiting-room.component.html',
-  styleUrls: ['./waiting-room.component.css']
+  styleUrls: ['./waiting-room.component.css'],
+  animations: [
+    trigger('fadeInOut', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(-20px)' }),
+        animate('300ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+      ]),
+      transition(':leave', [
+        animate('300ms ease-in', style({ opacity: 0, transform: 'translateY(-20px)' }))
+      ])
+    ])
+  ]
 })
 export class WaitingRoomComponent implements OnInit, OnDestroy {
   roomCode = '';
@@ -23,6 +35,8 @@ export class WaitingRoomComponent implements OnInit, OnDestroy {
     south: 'Sud',
     west: 'Ovest'
   };
+  notification = '';
+  notificationType: 'success' | 'error' | 'info' = 'info';
 
   private subscriptions: Subscription[] = [];
 
@@ -59,6 +73,13 @@ export class WaitingRoomComponent implements OnInit, OnDestroy {
         if (state.state === 'playing') {
           this.router.navigate(['/game', this.roomCode]);
         }
+      })
+    );
+
+    this.subscriptions.push(
+      this.socketService.onRoomDeleted().subscribe(data => {
+        this.showNotification(data.message, 'info');
+        setTimeout(() => this.router.navigate(['/']), 2000);
       })
     );
   }
@@ -128,6 +149,25 @@ export class WaitingRoomComponent implements OnInit, OnDestroy {
 
   copyRoomCode() {
     navigator.clipboard.writeText(this.roomCode);
-    alert('Codice copiato!');
+    this.showNotification('Codice copiato!', 'success');
+  }
+
+  showNotification(message: string, type: 'success' | 'error' | 'info' = 'info') {
+    this.notification = message;
+    this.notificationType = type;
+    setTimeout(() => {
+      this.notification = '';
+    }, 3000);
+  }
+
+  deleteRoom() {
+    if (confirm('Sei sicuro di voler cancellare il tavolo?')) {
+      this.socketService.deleteRoom(this.roomCode);
+      this.router.navigate(['/']);
+    }
+  }
+
+  goBack() {
+    this.router.navigate(['/']);
   }
 }

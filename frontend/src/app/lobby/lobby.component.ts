@@ -3,19 +3,32 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SocketService } from '../services/socket.service';
+import { trigger, transition, style, animate } from '@angular/animations';
 
 @Component({
   selector: 'app-lobby',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './lobby.component.html',
-  styleUrls: ['./lobby.component.css']
+  styleUrls: ['./lobby.component.css'],
+  animations: [
+    trigger('fadeInOut', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(-20px)' }),
+        animate('300ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+      ]),
+      transition(':leave', [
+        animate('300ms ease-in', style({ opacity: 0, transform: 'translateY(-20px)' }))
+      ])
+    ])
+  ]
 })
 export class LobbyComponent implements OnInit {
   playerName = '';
   roomCode = '';
   showJoinForm = false;
   activeRooms: any[] = [];
+  errorMessage = '';
 
   constructor(
     private socketService: SocketService,
@@ -32,7 +45,7 @@ export class LobbyComponent implements OnInit {
     });
 
     this.socketService.onError().subscribe(error => {
-      alert(error.message);
+      this.showError(error.message);
     });
 
     this.socketService.onActiveRoomsList().subscribe(rooms => {
@@ -46,6 +59,8 @@ export class LobbyComponent implements OnInit {
     if (this.playerName.trim()) {
       localStorage.setItem('belote_playerName', this.playerName.trim());
       this.socketService.createRoom(this.playerName.trim());
+    } else {
+      this.showError('Inserisci il tuo nome prima di creare una partita');
     }
   }
 
@@ -60,9 +75,11 @@ export class LobbyComponent implements OnInit {
         if (this.roomCode.trim()) {
           this.socketService.joinRoom(this.roomCode.trim().toUpperCase(), this.playerName.trim());
         } else {
-          alert('Nessuna stanza disponibile');
+          this.showError('Nessuna stanza disponibile');
         }
       }
+    } else {
+      this.showError('Inserisci il tuo nome prima di unirti a una partita');
     }
   }
 
@@ -76,8 +93,15 @@ export class LobbyComponent implements OnInit {
       localStorage.setItem('belote_playerName', this.playerName.trim());
       this.socketService.joinRoom(roomCode, this.playerName.trim());
     } else {
-      alert('Inserisci il tuo nome prima di unirti a una partita');
+      this.showError('Inserisci il tuo nome prima di unirti a una partita');
     }
+  }
+
+  showError(message: string) {
+    this.errorMessage = message;
+    setTimeout(() => {
+      this.errorMessage = '';
+    }, 4000);
   }
 
   showInfo() {
