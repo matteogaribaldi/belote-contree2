@@ -213,6 +213,7 @@ room.game = {
   trickConfirmations: null,
   waitingForConfirmation: false,
   isLastTrick: false,
+  trickDisplaying: false,
   contro: false,
   surcontre: false,
   gameOver: false,
@@ -414,6 +415,9 @@ playCard(socket, roomCode, card, botPosition = null) {
   const room = this.rooms.get(roomCode);
   if (!room || room.state !== 'playing' || room.game.biddingPhase) return;
 
+  // Blocca le giocate durante la visualizzazione del trick
+  if (room.game.trickDisplaying) return;
+
   const position = botPosition || this.getPlayerPosition(room, socket.id);
   if (!position || room.game.currentPlayer !== position) return;
 
@@ -519,18 +523,19 @@ completeTrick(room) {
     west: room.game.hands.west.length
   });
 
-  // Reset immediato del currentTrick per prevenire giocate multiple
-  const completedTrick = { ...room.game.currentTrick };
-  room.game.currentTrick = {};
-  room.game.currentPlayer = winner;
+  // Blocca le giocate durante la visualizzazione del trick
+  room.game.trickDisplaying = true;
 
   // Mostra il trick completo per 3 secondi
-  // Temporaneamente ripristina il trick per la visualizzazione
-  room.game.lastTrick = { ...completedTrick, winner, points };
   this.broadcastGameState(room.code);
 
   // Dopo 3 secondi, passa al prossimo trick o termina la mano
   setTimeout(() => {
+    // Sblocca le giocate e resetta il trick
+    room.game.trickDisplaying = false;
+    room.game.currentTrick = {};
+    room.game.currentPlayer = winner;
+
     if (handsEmpty) {
       this.endHand(room);
     } else {
@@ -1008,6 +1013,7 @@ completeTrick(room) {
         waitingForConfirmation: room.game.waitingForConfirmation,
         trickConfirmations: room.game.trickConfirmations,
         isLastTrick: room.game.isLastTrick,
+        trickDisplaying: room.game.trickDisplaying,
         playerNames: playerNames,
         contro: room.game.contro,
         surcontre: room.game.surcontre,
