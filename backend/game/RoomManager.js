@@ -519,7 +519,14 @@ completeTrick(room) {
     west: room.game.hands.west.length
   });
 
+  // Reset immediato del currentTrick per prevenire giocate multiple
+  const completedTrick = { ...room.game.currentTrick };
+  room.game.currentTrick = {};
+  room.game.currentPlayer = winner;
+
   // Mostra il trick completo per 3 secondi
+  // Temporaneamente ripristina il trick per la visualizzazione
+  room.game.lastTrick = { ...completedTrick, winner, points };
   this.broadcastGameState(room.code);
 
   // Dopo 3 secondi, passa al prossimo trick o termina la mano
@@ -527,9 +534,6 @@ completeTrick(room) {
     if (handsEmpty) {
       this.endHand(room);
     } else {
-      room.game.currentTrick = {};
-      room.game.currentPlayer = winner;
-
       this.broadcastGameState(room.code);
 
       // Se il vincitore è un bot, fallo giocare
