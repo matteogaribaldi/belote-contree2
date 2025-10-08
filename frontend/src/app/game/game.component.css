@@ -1097,7 +1097,7 @@
 }
 
 .player-hand-display {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.4);
   border-radius: 8px;
   padding: 12px;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -1134,12 +1134,12 @@
 
 .suit-symbol.hearts,
 .suit-symbol.diamonds {
-  color: #ff4444;
+  color: #ff6b6b;
 }
 
 .suit-symbol.clubs,
 .suit-symbol.spades {
-  color: #333;
+  color: #ffffff;
 }
 
 .cards-list {
