@@ -1,6 +1,7 @@
 const Deck = require('./Deck');
 const GameLogic = require('./GameLogic');
 const BotPlayer = require('./BotPlayer');
+const AdvancedBotPlayer = require('./AdvancedBotPlayer');
 
 class RoomManager {
   constructor(io) {
@@ -10,6 +11,7 @@ class RoomManager {
     this.deck = new Deck();
     this.gameLogic = new GameLogic();
     this.botPlayer = new BotPlayer(this.gameLogic);
+    this.advancedBotPlayer = new AdvancedBotPlayer(this.gameLogic);
     this.dealerRotation = ['north', 'east', 'south', 'west'];
     this.disconnectedPlayers = new Map(); // { roomCode-position: { playerName, timeout } }
     this.reconnectionTimeout = 60000; // 60 secondi
@@ -57,6 +59,7 @@ class RoomManager {
       game: null,
       gameScore: { northSouth: 0, eastWest: 0 },
       targetScore: 501,
+      advancedBotAI: false,
       handHistory: []
     };
 
@@ -691,7 +694,17 @@ completeTrick(room) {
     if (!this.isBot(room, position)) return;
 
     const hand = room.game.hands[position];
-    const card = this.botPlayer.playCard(hand, room.game.currentTrick, room.game.trump, position, room.game.contract);
+
+    // Scegli il bot in base alla configurazione della room
+    const bot = room.advancedBotAI ? this.advancedBotPlayer : this.botPlayer;
+
+    // Prepara gameState per AdvancedBotPlayer (serve per Monte Carlo)
+    const gameState = {
+      currentTrick: room.game.currentTrick,
+      completedTricks: room.game.completedTricks || []
+    };
+
+    const card = bot.playCard(hand, room.game.currentTrick, room.game.trump, position, room.game.contract, gameState);
 
      this.playCard({ id: 'bot' }, room.code, card, position);
   }
@@ -944,7 +957,8 @@ completeTrick(room) {
       players: {},
       bots: room.bots,
       state: room.state,
-      targetScore: room.targetScore || 501
+      targetScore: room.targetScore || 501,
+      advancedBotAI: room.advancedBotAI || false
     };
 
     for (let pos in room.players) {
@@ -1174,6 +1188,25 @@ completeTrick(room) {
 
     room.targetScore = targetScore;
     console.log(`Target score impostato a ${targetScore} per la stanza ${roomCode}`);
+
+    this.broadcastRoomState(roomCode);
+  }
+
+  setAdvancedBotAI(socket, roomCode, enabled) {
+    const room = this.rooms.get(roomCode);
+    if (!room) {
+      socket.emit('error', { message: 'Stanza non trovata' });
+      return;
+    }
+
+    // Solo l'host può cambiare l'AI dei bot
+    if (room.host !== socket.id) {
+      socket.emit('error', { message: 'Solo l\'host può cambiare l\'AI dei bot' });
+      return;
+    }
+
+    room.advancedBotAI = enabled;
+    console.log(`Advanced Bot AI ${enabled ? 'abilitata' : 'disabilitata'} per la stanza ${roomCode}`);
 
     this.broadcastRoomState(roomCode);
   }

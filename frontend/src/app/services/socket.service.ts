@@ -71,6 +71,10 @@ export class SocketService {
     this.socket.emit('setTargetScore', { roomCode, targetScore });
   }
 
+  setAdvancedBotAI(roomCode: string, enabled: boolean) {
+    this.socket.emit('setAdvancedBotAI', { roomCode, enabled });
+  }
+
   reconnect(roomCode: string, playerName: string) {
     this.socket.emit('reconnect', { roomCode, playerName });
   }

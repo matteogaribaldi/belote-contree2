@@ -130,6 +130,17 @@
           </button>
         </div>
       </div>
+      <div class="bot-ai-selection">
+        <label>
+          <input
+            type="checkbox"
+            [checked]="roomState.advancedBotAI"
+            (change)="toggleAdvancedBotAI()"
+          />
+          Advanced Bot AI (Monte Carlo)
+        </label>
+        <span class="bot-ai-hint">⚠️ Più intelligente ma più lento (1-3s per mossa)</span>
+      </div>
       <button
         class="btn-start"
         (click)="startGame()"

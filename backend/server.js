@@ -70,6 +70,10 @@ io.on('connection', (socket) => {
     roomManager.setTargetScore(socket, roomCode, targetScore);
   });
 
+  socket.on('setAdvancedBotAI', ({ roomCode, enabled }) => {
+    roomManager.setAdvancedBotAI(socket, roomCode, enabled);
+  });
+
   socket.on('reconnect', ({ roomCode, playerName }) => {
     roomManager.reconnectPlayer(socket, roomCode, playerName);
   });
