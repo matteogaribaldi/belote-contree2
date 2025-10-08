@@ -24,6 +24,12 @@
   overflow: visible;
 }
 
+.champions-logo picture {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .champions-img {
   max-width: 110%;
   height: auto;
