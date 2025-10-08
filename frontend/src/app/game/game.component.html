@@ -159,18 +159,22 @@
             [class.with-image]="gameState.lastSpeechBubble?.isJackOfTrump || gameState.lastSpeechBubble?.isNineOfTrump"
             [class.belote-bubble]="gameState.lastSpeechBubble?.isBelote || gameState.lastSpeechBubble?.isRebelote"
           >
-            <img
-              *ngIf="gameState.lastSpeechBubble?.isJackOfTrump"
-              src="assets/Subject.png"
-              alt="Jack of Trump"
-              class="subject-img-bubble"
-            >
-            <img
-              *ngIf="gameState.lastSpeechBubble?.isNineOfTrump"
-              src="assets/lory.png"
-              alt="Nine of Trump"
-              class="subject-img-bubble"
-            >
+            <picture *ngIf="gameState.lastSpeechBubble?.isJackOfTrump">
+              <source srcset="assets/Subject.webp" type="image/webp">
+              <img
+                src="assets/Subject.png"
+                alt="Jack of Trump"
+                class="subject-img-bubble"
+              >
+            </picture>
+            <picture *ngIf="gameState.lastSpeechBubble?.isNineOfTrump">
+              <source srcset="assets/lory.webp" type="image/webp">
+              <img
+                src="assets/lory.png"
+                alt="Nine of Trump"
+                class="subject-img-bubble"
+              >
+            </picture>
             <span *ngIf="!gameState.lastSpeechBubble?.isJackOfTrump && !gameState.lastSpeechBubble?.isNineOfTrump">
               {{ gameState.lastSpeechBubble?.message }}
             </span>
