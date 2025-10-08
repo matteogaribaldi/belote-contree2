@@ -31,7 +31,8 @@ export class GameComponent implements OnInit, OnDestroy {
   showTrickOverlay = false;
   showWinnerAnnouncement = false;
   showWinningCard = false;
-  winningCardPosition: string = ''; 
+  winningCardPosition: string = '';
+  showInitialHands = false; 
 
   suitSymbols: any = {
     hearts: '♥',
@@ -358,5 +359,15 @@ this.subscriptions.push(
 
   isWinningCard(position: string): boolean {
     return this.showWinningCard && this.winningCardPosition === position;
+  }
+
+  getCardsForSuit(hand: any[], suit: string): string {
+    if (!hand) return '';
+
+    const cardsInSuit = hand
+      .filter(card => card.suit === suit)
+      .map(card => card.rank);
+
+    return cardsInSuit.length > 0 ? cardsInSuit.join(' ') : '-';
   }
 }

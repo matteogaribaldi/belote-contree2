@@ -269,6 +269,25 @@
         </p>
       </div>
 
+      <!-- Sezione carte iniziali espandibile -->
+      <div class="initial-hands-section">
+        <button class="btn-toggle-hands" (click)="showInitialHands = !showInitialHands">
+          {{ showInitialHands ? '▼' : '▶' }} Mostra carte iniziali
+        </button>
+
+        <div class="initial-hands-grid" *ngIf="showInitialHands && gameState.initialHands">
+          <div class="player-hand-display" *ngFor="let pos of ['north', 'east', 'south', 'west']">
+            <h4>{{ getPositionLabel(pos) }}</h4>
+            <div class="cards-by-suit">
+              <div class="suit-row" *ngFor="let suit of ['hearts', 'diamonds', 'clubs', 'spades']">
+                <span class="suit-symbol" [ngClass]="suit">{{ getSuitSymbol(suit) }}</span>
+                <span class="cards-list">{{ getCardsForSuit(gameState.initialHands[pos], suit) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <button class="btn-new-hand" (click)="nextHand()">
         Nuova Mano
       </button>

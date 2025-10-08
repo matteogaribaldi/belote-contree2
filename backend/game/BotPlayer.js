@@ -151,20 +151,75 @@ class BotPlayer {
 
   // Valuta forza difensiva contro un trump avversario
   evaluateDefense(hand, opponentTrump) {
-    let trumpHonors = 0;
-    let aces = 0;
+    const trumpCards = hand.filter(c => c.suit === opponentTrump);
+    const trumpCount = trumpCards.length;
 
-    hand.forEach(card => {
-      if (card.suit === opponentTrump) {
-        if (card.rank === 'J') trumpHonors += 20;
-        if (card.rank === '9') trumpHonors += 14;
-        if (card.rank === 'A') trumpHonors += 11;
-      } else {
-        if (card.rank === 'A') aces += 15;
+    // Analizza le carte di atout in mano
+    const hasJack = trumpCards.some(c => c.rank === 'J');
+    const hasNine = trumpCards.some(c => c.rank === '9');
+    const hasAce = trumpCards.some(c => c.rank === 'A');
+    const hasTen = trumpCards.some(c => c.rank === '10');
+
+    // Conta assi esterni (potenziali mani da prendere)
+    const acesOutside = hand.filter(c => c.suit !== opponentTrump && c.rank === 'A').length;
+    const tensOutside = hand.filter(c => c.suit !== opponentTrump && c.rank === '10').length;
+
+    // LOGICA CONTRO: Calcola quante mani possiamo realisticamente prendere
+    let estimatedTricks = 0;
+
+    // 1. Mani garantite con atout forte
+    if (hasJack) {
+      // J prende sempre almeno 1 mano
+      estimatedTricks += 1;
+
+      // Se ho anche 9, prendo sicuramente un'altra mano dopo che esce J
+      if (hasNine) {
+        estimatedTricks += 1;
       }
-    });
+      // Se ho J + A ma non 9, potrei prendere 1-2 mani (dipende da chi ha il 9)
+      else if (hasAce) {
+        estimatedTricks += 0.5;
+      }
+    } else if (hasNine) {
+      // Ho 9 senza J: prendo solo se J è già uscito o è nel mio partner
+      // Stima conservativa: 0.5 mani (potrebbe prendere dopo che esce J)
+      estimatedTricks += 0.5;
 
-    return trumpHonors + aces;
+      // Se ho anche A, aumenta probabilità
+      if (hasAce) {
+        estimatedTricks += 0.3;
+      }
+    } else if (hasAce && trumpCount >= 3) {
+      // Ho A senza J/9, ma ho molti atout: potrei eventualmente prendere
+      estimatedTricks += 0.3;
+    }
+
+    // 2. Mani con assi laterali (dopo che atout sono usciti)
+    // Se abbiamo buoni atout, gli assi esterni hanno più valore
+    if (trumpCount >= 3 || hasJack || hasNine) {
+      estimatedTricks += acesOutside * 0.8; // Probabilità alta di prendere con assi
+      estimatedTricks += tensOutside * 0.4; // 10 potrebbe prendere
+    } else {
+      // Con poco atout, assi rischiano di essere tagliati
+      estimatedTricks += acesOutside * 0.5;
+      estimatedTricks += tensOutside * 0.2;
+    }
+
+    // 3. Bonus se abbiamo molti atout (controllo del gioco)
+    if (trumpCount >= 4) {
+      estimatedTricks += 0.5; // Controllo extra
+    }
+
+    // DECISIONE CONTRO:
+    // - Serve fare almeno 82 punti (162 totali - 80 minimo contratto = 82 per difensori)
+    // - In media ogni mano vale ~20 punti (162/8)
+    // - Per fare 82 punti servono circa 4 mani
+    // - Con il "contro" i punti raddoppiano, quindi basta fare 2 mane sicure (40 punti base * 2 = 80)
+
+    // Ritorna punteggio: ogni mano stimata vale 20 punti
+    const defenseScore = estimatedTricks * 20;
+
+    return defenseScore;
   }
 
   // Trova il seme migliore da puntare
