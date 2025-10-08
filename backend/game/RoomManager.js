@@ -199,6 +199,7 @@ class RoomManager {
 
 room.game = {
   hands: hands,
+  initialHands: JSON.parse(JSON.stringify(hands)), // Salva copia delle carte iniziali
   currentPlayer: firstPlayer,
   dealer: dealer,
   biddingPhase: true,
@@ -222,6 +223,9 @@ room.game = {
 
   // Ordina le carte DOPO aver inizializzato room.game
   this.sortHands(hands, null);
+
+  // Log inizio partita con tutte le carte
+  this.logGameStart(room, hands, dealer, firstPlayer);
 
   this.broadcastGameState(room.code);
 
@@ -635,7 +639,8 @@ completeTrick(room) {
       contract: room.game.contract,
       finalScore: finalScore,
       winner: finalScore.northSouth > finalScore.eastWest ? 'northSouth' : 'eastWest',
-      gameScore: { ...room.gameScore }
+      gameScore: { ...room.gameScore },
+      initialHands: room.game.initialHands // Salva le carte iniziali nello storico
     });
 
     // Controlla se qualcuno ha raggiunto 701 punti
@@ -1021,7 +1026,8 @@ completeTrick(room) {
         handHistory: room.handHistory,
         gameOver: room.game.gameOver,
         winner: room.game.winner,
-        lastSpeechBubble: room.game.lastSpeechBubble
+        lastSpeechBubble: room.game.lastSpeechBubble,
+        initialHands: room.game.initialHands // Invia carte iniziali per visualizzazione fine mano
       };
 
       this.io.to(socketId).emit('gameState', gameState);
@@ -1096,6 +1102,52 @@ completeTrick(room) {
 
     // Aggiorna la lista delle stanze attive
     this.broadcastActiveRooms();
+  }
+
+  // Helper: Log inizio partita con tutte le carte
+  logGameStart(room, hands, dealer, firstPlayer) {
+    console.log('\n' + '='.repeat(80));
+    console.log('NUOVA MANO - Stanza:', room.code);
+    console.log('Dealer:', dealer.toUpperCase(), '| Primo a giocare:', firstPlayer.toUpperCase());
+    console.log('='.repeat(80));
+
+    const positions = ['north', 'east', 'south', 'west'];
+    const suitSymbols = {
+      'hearts': '♥',
+      'diamonds': '♦',
+      'clubs': '♣',
+      'spades': '♠'
+    };
+
+    positions.forEach(pos => {
+      const playerName = room.playerNames[room.players[pos]] || 'Giocatore';
+      const hand = hands[pos];
+
+      // Formatta le carte per seme
+      const cardsBySuit = {
+        'hearts': [],
+        'diamonds': [],
+        'clubs': [],
+        'spades': []
+      };
+
+      hand.forEach(card => {
+        cardsBySuit[card.suit].push(card.rank);
+      });
+
+      // Costruisci stringa delle carte
+      const cardsStr = ['hearts', 'diamonds', 'clubs', 'spades']
+        .map(suit => {
+          if (cardsBySuit[suit].length === 0) return null;
+          return `${suitSymbols[suit]} ${cardsBySuit[suit].join(' ')}`;
+        })
+        .filter(s => s !== null)
+        .join(' | ');
+
+      console.log(`[${pos.toUpperCase().padEnd(5)}] ${playerName.padEnd(20)} ${cardsStr}`);
+    });
+
+    console.log('='.repeat(80) + '\n');
   }
 }
 
