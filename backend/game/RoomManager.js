@@ -56,6 +56,7 @@ class RoomManager {
       state: 'waiting',
       game: null,
       gameScore: { northSouth: 0, eastWest: 0 },
+      targetScore: 501,
       handHistory: []
     };
 
@@ -643,10 +644,11 @@ completeTrick(room) {
       initialHands: room.game.initialHands // Salva le carte iniziali nello storico
     });
 
-    // Controlla se qualcuno ha raggiunto 701 punti
-    if (room.gameScore.northSouth >= 701 || room.gameScore.eastWest >= 701) {
+    // Controlla se qualcuno ha raggiunto il punteggio target
+    const targetScore = room.targetScore || 501;
+    if (room.gameScore.northSouth >= targetScore || room.gameScore.eastWest >= targetScore) {
       room.game.gameOver = true;
-      room.game.winner = room.gameScore.northSouth >= 701 ? 'northSouth' : 'eastWest';
+      room.game.winner = room.gameScore.northSouth >= targetScore ? 'northSouth' : 'eastWest';
     }
 
     this.broadcastGameState(room.code);
@@ -941,7 +943,8 @@ completeTrick(room) {
       host: room.host,
       players: {},
       bots: room.bots,
-      state: room.state
+      state: room.state,
+      targetScore: room.targetScore || 501
     };
 
     for (let pos in room.players) {
@@ -1148,6 +1151,31 @@ completeTrick(room) {
     });
 
     console.log('='.repeat(80) + '\n');
+  }
+
+  setTargetScore(socket, roomCode, targetScore) {
+    const room = this.rooms.get(roomCode);
+    if (!room) {
+      socket.emit('error', { message: 'Stanza non trovata' });
+      return;
+    }
+
+    // Solo l'host può cambiare il target score
+    if (room.host !== socket.id) {
+      socket.emit('error', { message: 'Solo l\'host può cambiare il punteggio target' });
+      return;
+    }
+
+    // Valida il target score
+    if (![301, 501, 701].includes(targetScore)) {
+      socket.emit('error', { message: 'Punteggio target non valido' });
+      return;
+    }
+
+    room.targetScore = targetScore;
+    console.log(`Target score impostato a ${targetScore} per la stanza ${roomCode}`);
+
+    this.broadcastRoomState(roomCode);
   }
 }
 

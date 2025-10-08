@@ -104,6 +104,32 @@
     </div>
 
     <div class="actions" *ngIf="isHost()">
+      <div class="target-score-selection">
+        <label>Punteggio da raggiungere:</label>
+        <div class="score-options">
+          <button
+            class="btn-score"
+            [class.selected]="roomState.targetScore === 301"
+            (click)="setTargetScore(301)"
+          >
+            301
+          </button>
+          <button
+            class="btn-score"
+            [class.selected]="roomState.targetScore === 501"
+            (click)="setTargetScore(501)"
+          >
+            501
+          </button>
+          <button
+            class="btn-score"
+            [class.selected]="roomState.targetScore === 701"
+            (click)="setTargetScore(701)"
+          >
+            701
+          </button>
+        </div>
+      </div>
       <button
         class="btn-start"
         (click)="startGame()"

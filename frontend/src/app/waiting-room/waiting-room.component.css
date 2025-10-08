@@ -311,3 +311,57 @@
     top: 20px;
   }
 }
+
+/* Target Score Selection */
+.target-score-selection {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.target-score-selection label {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #fff;
+}
+
+.score-options {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.btn-score {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-score:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.btn-score.selected {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+@media (max-width: 768px) {
+  .score-options {
+    flex-direction: column;
+  }
+
+  .btn-score {
+    width: 100%;
+  }
+}

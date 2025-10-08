@@ -66,6 +66,10 @@ io.on('connection', (socket) => {
     roomManager.deleteRoom(socket, roomCode);
   });
 
+  socket.on('setTargetScore', ({ roomCode, targetScore }) => {
+    roomManager.setTargetScore(socket, roomCode, targetScore);
+  });
+
   socket.on('reconnect', ({ roomCode, playerName }) => {
     roomManager.reconnectPlayer(socket, roomCode, playerName);
   });

@@ -181,4 +181,10 @@ export class WaitingRoomComponent implements OnInit, OnDestroy {
   goBack() {
     this.router.navigate(['/']);
   }
+
+  setTargetScore(score: number) {
+    if (this.isHost()) {
+      this.socketService.setTargetScore(this.roomCode, score);
+    }
+  }
 }

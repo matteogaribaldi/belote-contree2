@@ -67,6 +67,10 @@ export class SocketService {
     this.socket.emit('deleteRoom', roomCode);
   }
 
+  setTargetScore(roomCode: string, targetScore: number) {
+    this.socket.emit('setTargetScore', { roomCode, targetScore });
+  }
+
   reconnect(roomCode: string, playerName: string) {
     this.socket.emit('reconnect', { roomCode, playerName });
   }
