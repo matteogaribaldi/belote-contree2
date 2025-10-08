@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SocketService } from '../services/socket.service';
 import { AudioService } from '../services/audio.service';
 import { Subscription } from 'rxjs';
@@ -54,6 +54,7 @@ export class GameComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private socketService: SocketService,
     public audioService: AudioService
   ) {}
@@ -134,6 +135,17 @@ this.subscriptions.push(
   this.socketService.onReconnected().subscribe(data => {
     console.log('Riconnesso con successo!', data);
     // Il game state verrà inviato automaticamente dal server
+  })
+);
+
+this.subscriptions.push(
+  this.socketService.onError().subscribe(error => {
+    console.error('Errore dalla stanza:', error);
+    // Se la stanza non esiste, reindirizza alla lobby
+    if (error.message && error.message.includes('non trovata')) {
+      this.socketService.clearGameSession();
+      this.router.navigate(['/']);
+    }
   })
 );
 

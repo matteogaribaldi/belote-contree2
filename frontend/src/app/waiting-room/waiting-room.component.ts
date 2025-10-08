@@ -82,6 +82,17 @@ export class WaitingRoomComponent implements OnInit, OnDestroy {
         setTimeout(() => this.router.navigate(['/']), 2000);
       })
     );
+
+    this.subscriptions.push(
+      this.socketService.onError().subscribe(error => {
+        console.error('Errore dalla stanza:', error);
+        // Se la stanza non esiste, reindirizza alla lobby
+        if (error.message && error.message.includes('non trovata')) {
+          this.socketService.clearGameSession();
+          this.router.navigate(['/']);
+        }
+      })
+    );
   }
 
   ngOnDestroy() {
