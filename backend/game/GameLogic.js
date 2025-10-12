@@ -65,6 +65,25 @@ class GameLogic {
       return false;
     }
 
+    // Se seguo il seme di atout, devo surclassare se posso
+    if (hasSuit && leadSuit === trump && card.suit === trump) {
+      const trumpsInTrick = Object.values(trick).filter(c => c.suit === trump);
+      if (trumpsInTrick.length > 0) {
+        const highestTrump = trumpsInTrick.reduce((max, c) =>
+          this.deck.getCardOrder(c, trump) > this.deck.getCardOrder(max, trump) ? c : max
+        );
+
+        const canSurpass = hand.some(c =>
+          c.suit === trump &&
+          this.deck.getCardOrder(c, trump) > this.deck.getCardOrder(highestTrump, trump)
+        );
+
+        if (canSurpass && this.deck.getCardOrder(card, trump) <= this.deck.getCardOrder(highestTrump, trump)) {
+          return false;
+        }
+      }
+    }
+
     // Se non ho il seme
     if (!hasSuit) {
       const hasTrump = hand.some(c => c.suit === trump);

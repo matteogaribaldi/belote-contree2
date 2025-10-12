@@ -99,13 +99,21 @@ class RoomManager {
       return;
     }
 
-    // Controlla se ci sono giocatori reali nella stanza
-    const hasRealPlayers = Object.values(room.players).some(player => player !== null && !player.startsWith('bot-'));
+    // Controlla se ci sono giocatori reali nella stanza (escludendo chi si sta connettendo)
+    const hasRealPlayers = Object.values(room.players).some(player =>
+      player !== null &&
+      !player.startsWith('bot-') &&
+      player !== socket.id
+    );
 
-    // Se non ci sono giocatori reali, il nuovo giocatore diventa host
-    if (!hasRealPlayers) {
+    // Controlla se l'host corrente esiste ancora nei socket connessi
+    const hostSocket = room.host ? this.io.sockets.sockets.get(room.host) : null;
+    const hostDisconnected = !hostSocket;
+
+    // Se non ci sono giocatori reali o l'host è disconnesso, il nuovo giocatore diventa host
+    if (!hasRealPlayers || hostDisconnected) {
       room.host = socket.id;
-      console.log(`${playerName} è il nuovo host della stanza ${roomCode} (nessun altro giocatore presente)`);
+      console.log(`${playerName} è il nuovo host della stanza ${roomCode} (${hostDisconnected ? 'host precedente disconnesso' : 'nessun altro giocatore presente'})`);
     }
 
     this.playerRooms.set(socket.id, roomCode);
@@ -205,6 +213,7 @@ room.game = {
   hands: hands,
   initialHands: JSON.parse(JSON.stringify(hands)), // Salva copia delle carte iniziali
   currentPlayer: firstPlayer,
+  firstPlayer: firstPlayer, // Primo giocatore della mano (per asta)
   dealer: dealer,
   biddingPhase: true,
   bids: [],
@@ -836,9 +845,8 @@ completeTrick(room) {
         room.bots[pos] = false;
         room.disconnectedStatus[pos] = false;
 
-        // Se era l'host, mantieni lo stato di host
-        const wasHost = room.host === disconnectedData.oldSocketId;
-        if (wasHost) {
+        // Se era l'host, ripristina lo stato di host
+        if (disconnectedData.wasHost) {
           room.host = socket.id;
         }
 
@@ -848,7 +856,7 @@ completeTrick(room) {
 
         socket.join(roomCode);
 
-        console.log(`${playerName} riconnesso come ${pos} nella stanza ${roomCode}${wasHost ? ' (host ripristinato)' : ''}`);
+        console.log(`${playerName} riconnesso come ${pos} nella stanza ${roomCode}${disconnectedData.wasHost ? ' (host ripristinato)' : ''}`);
 
         socket.emit('reconnected', { roomCode, position: pos });
         this.broadcastGameState(roomCode);
@@ -904,6 +912,7 @@ completeTrick(room) {
         this.disconnectedPlayers.set(disconnectKey, {
           playerName,
           oldSocketId: socket.id,
+          wasHost: room.host === socket.id,
           timeout
         });
 
@@ -1021,6 +1030,7 @@ completeTrick(room) {
         position: pos,
         hand: room.game.hands[pos],
         currentPlayer: room.game.currentPlayer,
+        firstPlayer: room.game.firstPlayer,
         dealer: room.game.dealer,
         biddingPhase: room.game.biddingPhase,
         bids: room.game.bids,
