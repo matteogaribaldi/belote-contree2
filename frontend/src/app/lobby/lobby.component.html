@@ -28,8 +28,12 @@
 
     <!-- Se NON ci sono stanze attive, mostra solo "Crea Partita" -->
     <div class="button-group" *ngIf="activeRooms.length === 0">
-      <button class="btn-primary" (click)="createRoom()" [disabled]="!playerName.trim()">
-        Crea Partita
+      <button class="btn-primary" (click)="createRoom()" [disabled]="!playerName.trim() || isCreatingRoom">
+        <span *ngIf="!isCreatingRoom">Crea Partita</span>
+        <span *ngIf="isCreatingRoom" class="loading-container">
+          <span class="spinner"></span>
+          <span>Creazione tavolo...</span>
+        </span>
       </button>
     </div>
 

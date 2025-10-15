@@ -29,6 +29,7 @@ export class LobbyComponent implements OnInit {
   showJoinForm = false;
   activeRooms: any[] = [];
   errorMessage = '';
+  isCreatingRoom = false;
 
   constructor(
     private socketService: SocketService,
@@ -37,6 +38,7 @@ export class LobbyComponent implements OnInit {
 
   ngOnInit() {
     this.socketService.onRoomCreated().subscribe(data => {
+      this.isCreatingRoom = false;
       this.router.navigate(['/waiting', data.roomCode]);
     });
 
@@ -45,6 +47,7 @@ export class LobbyComponent implements OnInit {
     });
 
     this.socketService.onError().subscribe(error => {
+      this.isCreatingRoom = false;
       this.showError(error.message);
     });
 
@@ -57,6 +60,7 @@ export class LobbyComponent implements OnInit {
 
   createRoom() {
     if (this.playerName.trim()) {
+      this.isCreatingRoom = true;
       localStorage.setItem('belote_playerName', this.playerName.trim());
       this.socketService.createRoom(this.playerName.trim());
     } else {
