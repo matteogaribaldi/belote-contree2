@@ -4,11 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SocketService } from '../services/socket.service';
 import { trigger, transition, style, animate } from '@angular/animations';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-lobby',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HttpClient],
   templateUrl: './lobby.component.html',
   styleUrls: ['./lobby.component.css'],
   animations: [
@@ -30,10 +32,14 @@ export class LobbyComponent implements OnInit {
   activeRooms: any[] = [];
   errorMessage = '';
   isCreatingRoom = false;
+  showHistoryModal = false;
+  loadingHistory = false;
+  gameHistory: any = null;
 
   constructor(
     private socketService: SocketService,
-    private router: Router
+    private router: Router,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
@@ -140,5 +146,49 @@ Leggenda narra che il gioco si chiamasse "Belotte Bridgè", ma è probabilmente 
 Obiettivo: raggiungere 701 punti prima degli avversari.
 
 Buon divertimento! 🎉`);
+  }
+
+  showHistory() {
+    this.showHistoryModal = true;
+    this.loadingHistory = true;
+
+    const backendUrl = environment.socketUrl.replace(/\/$/, '');
+    this.http.get<any>(`${backendUrl}/api/game-history?limit=50`).subscribe({
+      next: (data) => {
+        this.gameHistory = data;
+        this.loadingHistory = false;
+      },
+      error: (error) => {
+        console.error('Errore nel caricare lo storico:', error);
+        this.loadingHistory = false;
+        this.showError('Errore nel caricare lo storico delle partite');
+      }
+    });
+  }
+
+  closeHistory() {
+    this.showHistoryModal = false;
+  }
+
+  formatDate(timestamp: number): string {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Ora';
+    if (diffMins < 60) return `${diffMins} minuti fa`;
+    if (diffHours < 24) return `${diffHours} ore fa`;
+    if (diffDays < 7) return `${diffDays} giorni fa`;
+
+    return date.toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 }

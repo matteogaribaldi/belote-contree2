@@ -3,12 +3,14 @@ const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const RoomManager = require('./game/RoomManager');
+const { getRecentGames, getTotalGames } = require('./game/database');
 
 const app = express();
 app.use(cors({
   origin: '*',
   credentials: true
 }));
+app.use(express.json());
 
 const server = http.createServer(app);
 const io = socketIo(server, {
@@ -82,6 +84,27 @@ io.on('connection', (socket) => {
     console.log('Client disconnesso:', socket.id);
     roomManager.handleDisconnect(socket);
   });
+});
+
+// REST API endpoint per lo storico partite
+app.get('/api/game-history', (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const games = getRecentGames(limit);
+    const totalGames = getTotalGames();
+
+    res.json({
+      success: true,
+      totalGames,
+      games
+    });
+  } catch (error) {
+    console.error('Errore nel recuperare lo storico:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Errore nel recuperare lo storico delle partite'
+    });
+  }
 });
 
 const PORT = process.env.PORT || 3000;

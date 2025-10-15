@@ -127,6 +127,17 @@
   border-radius: 5px;
 }
 
+/* Team colors for bidding phase */
+.team-ns {
+  color: #64B5F6 !important;
+  text-shadow: 0 0 8px rgba(100, 181, 246, 0.5);
+}
+
+.team-ew {
+  color: #FFB74D !important;
+  text-shadow: 0 0 8px rgba(255, 183, 77, 0.5);
+}
+
 .bidding-actions h3 {
   text-align: center;
   margin-bottom: 20px;

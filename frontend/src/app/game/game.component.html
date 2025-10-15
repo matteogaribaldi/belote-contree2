@@ -43,7 +43,10 @@
       <h3>Puntate:</h3>
       <div class="bid-list">
         <div class="bid-item" *ngFor="let bidEntry of gameState.bids">
-          <strong>{{ getPositionLabel(bidEntry.player) }}:</strong>
+          <strong [class.team-ns]="bidEntry.player === 'north' || bidEntry.player === 'south'"
+                  [class.team-ew]="bidEntry.player === 'east' || bidEntry.player === 'west'">
+            {{ getPositionLabel(bidEntry.player) }}:
+          </strong>
           <span *ngIf="bidEntry.bid.type === 'pass'">Passo</span>
           <span *ngIf="bidEntry.bid.type === 'bid'">
             {{ bidEntry.bid.points }} -
@@ -122,7 +125,12 @@
     </div>
 
     <div class="waiting-bid" *ngIf="!isMyTurn()">
-      <p>Turno di: <strong>{{ getPositionLabel(gameState.currentPlayer) }}</strong></p>
+      <p>Turno di:
+        <strong [class.team-ns]="gameState.currentPlayer === 'north' || gameState.currentPlayer === 'south'"
+                [class.team-ew]="gameState.currentPlayer === 'east' || gameState.currentPlayer === 'west'">
+          {{ getPositionLabel(gameState.currentPlayer) }}
+        </strong>
+      </p>
       <div class="loader"></div>
     </div>
     <div class="player-hand-bidding">

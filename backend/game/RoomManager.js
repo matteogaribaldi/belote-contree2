@@ -2,6 +2,7 @@ const Deck = require('./Deck');
 const GameLogic = require('./GameLogic');
 const BotPlayer = require('./BotPlayer');
 const AdvancedBotPlayer = require('./AdvancedBotPlayer');
+const { saveGame } = require('./database');
 
 class RoomManager {
   constructor(io) {
@@ -661,6 +662,9 @@ completeTrick(room) {
     if (room.gameScore.northSouth >= targetScore || room.gameScore.eastWest >= targetScore) {
       room.game.gameOver = true;
       room.game.winner = room.gameScore.northSouth >= targetScore ? 'northSouth' : 'eastWest';
+
+      // Salva la partita completata nel database
+      this.saveGameToDatabase(room);
     }
 
     this.broadcastGameState(room.code);
@@ -1219,6 +1223,36 @@ completeTrick(room) {
     console.log(`Advanced Bot AI ${enabled ? 'abilitata' : 'disabilitata'} per la stanza ${roomCode}`);
 
     this.broadcastRoomState(roomCode);
+  }
+
+  saveGameToDatabase(room) {
+    try {
+      // Prepara i dati dei giocatori
+      const players = ['north', 'east', 'south', 'west'].map(pos => ({
+        position: pos,
+        name: room.players[pos]?.name || 'Bot',
+        isBot: room.bots[pos]
+      }));
+
+      // Prepara gli IP dei giocatori
+      const playerIps = ['north', 'east', 'south', 'west'].map(pos => {
+        return room.players[pos]?.ip || 'bot';
+      });
+
+      saveGame(
+        room.code,
+        players,
+        playerIps,
+        room.game.winner,
+        room.gameScore,
+        room.game.handHistory.length,
+        room.targetScore || 501
+      );
+
+      console.log(`✅ Partita ${room.code} salvata nel database`);
+    } catch (error) {
+      console.error('❌ Errore nel salvare la partita nel database:', error);
+    }
   }
 }
 
