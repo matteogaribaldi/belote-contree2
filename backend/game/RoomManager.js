@@ -244,7 +244,7 @@ room.game = {
   this.broadcastGameState(room.code);
 
   if (this.isBot(room, firstPlayer)) {
-    setTimeout(() => this.botBid(room, firstPlayer), 1000);
+    setTimeout(() => this.botBid(room, firstPlayer), 500);
   }
 }
 
@@ -288,7 +288,7 @@ room.game = {
       this.broadcastGameState(room.code);
 
       if (this.isBot(room, room.game.currentPlayer)) {
-        setTimeout(() => this.botPlay(room, room.game.currentPlayer), 1000);
+        setTimeout(() => this.botPlay(room, room.game.currentPlayer), 500);
       }
       return;
     } else if (bid.type === 'bid' || bid.type === 'cappotto') {
@@ -330,7 +330,7 @@ room.game = {
     this.broadcastGameState(room.code);
 
     if (this.isBot(room, room.game.currentPlayer)) {
-      setTimeout(() => this.botPlay(room, room.game.currentPlayer), 1000);
+      setTimeout(() => this.botPlay(room, room.game.currentPlayer), 500);
     }
     return;
   }
@@ -346,7 +346,7 @@ room.game = {
     this.broadcastGameState(room.code);
 
     if (this.isBot(room, room.game.currentPlayer)) {
-      setTimeout(() => this.botBid(room, room.game.currentPlayer), 1000);
+      setTimeout(() => this.botBid(room, room.game.currentPlayer), 500);
     }
   }
 
@@ -508,7 +508,7 @@ playCard(socket, roomCode, card, botPosition = null) {
 
   // Se il prossimo è un bot
   if (this.isBot(room, room.game.currentPlayer)) {
-    setTimeout(() => this.botPlay(room, room.game.currentPlayer), 2000);  // <-- CAMBIATO
+    setTimeout(() => this.botPlay(room, room.game.currentPlayer), 500);  // <-- CAMBIATO
   }
 }
   }
@@ -561,7 +561,7 @@ completeTrick(room) {
 
       // Se il vincitore è un bot, fallo giocare
       if (this.isBot(room, room.game.currentPlayer)) {
-        setTimeout(() => this.botPlay(room, room.game.currentPlayer), 1000);
+        setTimeout(() => this.botPlay(room, room.game.currentPlayer), 500);
       }
     }
   }, 3000);
@@ -906,9 +906,9 @@ completeTrick(room) {
           // Se è il turno del giocatore disconnesso, fallo giocare come bot
           if (room.game && room.game.currentPlayer === position) {
             if (room.game.biddingPhase) {
-              setTimeout(() => this.botBid(room, position), 1000);
+              setTimeout(() => this.botBid(room, position), 500);
             } else {
-              setTimeout(() => this.botPlay(room, position), 1000);
+              setTimeout(() => this.botPlay(room, position), 500);
             }
           }
         }, this.reconnectionTimeout);
@@ -932,9 +932,9 @@ completeTrick(room) {
         // Se è il turno del giocatore, continua con il bot
         if (room.game.currentPlayer === position) {
           if (room.game.biddingPhase) {
-            setTimeout(() => this.botBid(room, position), 1000);
+            setTimeout(() => this.botBid(room, position), 500);
           } else {
-            setTimeout(() => this.botPlay(room, position), 1000);
+            setTimeout(() => this.botPlay(room, position), 500);
           }
         }
       } else {
