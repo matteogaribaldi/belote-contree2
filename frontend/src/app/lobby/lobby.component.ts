@@ -10,7 +10,7 @@ import { environment } from '../../environments/environment';
 @Component({
   selector: 'app-lobby',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClient],
+  imports: [CommonModule, FormsModule],
   templateUrl: './lobby.component.html',
   styleUrls: ['./lobby.component.css'],
   animations: [
