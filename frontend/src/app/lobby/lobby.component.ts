@@ -35,6 +35,9 @@ export class LobbyComponent implements OnInit {
   showHistoryModal = false;
   loadingHistory = false;
   gameHistory: any = null;
+  showStatsModal = false;
+  loadingStats = false;
+  gameStats: any = null;
 
   constructor(
     private socketService: SocketService,
@@ -168,6 +171,28 @@ Buon divertimento! 🎉`);
 
   closeHistory() {
     this.showHistoryModal = false;
+  }
+
+  showStats() {
+    this.showStatsModal = true;
+    this.loadingStats = true;
+
+    const backendUrl = environment.socketUrl.replace(/\/$/, '');
+    this.http.get<any>(`${backendUrl}/api/stats`).subscribe({
+      next: (data) => {
+        this.gameStats = data.stats;
+        this.loadingStats = false;
+      },
+      error: (error) => {
+        console.error('Errore nel caricare le statistiche:', error);
+        this.loadingStats = false;
+        this.showError('Errore nel caricare le statistiche');
+      }
+    });
+  }
+
+  closeStats() {
+    this.showStatsModal = false;
   }
 
   formatDate(timestamp: number): string {

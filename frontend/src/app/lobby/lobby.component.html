@@ -8,6 +8,11 @@
   <button class="info-btn-fixed" (click)="showInfo()" title="Informazioni">
     <span>ℹ</span>
   </button>
+
+  <button class="stats-btn-fixed" (click)="showStats()" title="Statistiche">
+    <span>📊</span>
+  </button>
+
   <div class="lobby-card">
     <div class="champions-logo">
       <picture>
@@ -55,6 +60,67 @@
         <button class="btn-primary" (click)="joinRoom()" [disabled]="!playerName.trim()">
           Unisciti a Partita
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Statistiche -->
+  <div class="modal-overlay" *ngIf="showStatsModal" (click)="closeStats()">
+    <div class="modal-content stats-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>📊 Statistiche Partite</h2>
+        <button class="close-btn" (click)="closeStats()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="loadingStats" class="loading-container">
+          <span class="spinner"></span>
+          <span>Caricamento statistiche...</span>
+        </div>
+
+        <div *ngIf="!loadingStats && gameStats" class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">🎮</div>
+            <div class="stat-value">{{ gameStats.total_games }}</div>
+            <div class="stat-label">Partite Totali</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value">{{ gameStats.completed_games }}</div>
+            <div class="stat-label">Partite Completate</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">🏆</div>
+            <div class="stat-value">{{ gameStats.ns_wins }}</div>
+            <div class="stat-label">Vittorie Nord/Sud</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">🏆</div>
+            <div class="stat-value">{{ gameStats.ew_wins }}</div>
+            <div class="stat-label">Vittorie Est/Ovest</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-value">{{ gameStats.avg_score_ns | number:'1.0-0' }}</div>
+            <div class="stat-label">Punteggio Medio N/S</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-value">{{ gameStats.avg_score_ew | number:'1.0-0' }}</div>
+            <div class="stat-label">Punteggio Medio E/W</div>
+          </div>
+        </div>
+
+        <div *ngIf="!loadingStats && gameStats && gameStats.total_games === 0" class="empty-state">
+          <span class="empty-icon">📊</span>
+          <p>Nessuna partita registrata nel database</p>
+          <p class="empty-hint">Completa una partita per vedere le statistiche!</p>
+        </div>
       </div>
     </div>
   </div>

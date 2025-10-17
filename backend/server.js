@@ -4,7 +4,7 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const RoomManager = require('./game/RoomManager');
 const { getRecentGames, getTotalGames } = require('./game/database');
-const { initializeDatabase } = require('./database/db');
+const { initializeDatabase, getGameStats } = require('./database/db');
 
 const app = express();
 app.use(cors({
@@ -104,6 +104,46 @@ app.get('/api/game-history', (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Errore nel recuperare lo storico delle partite'
+    });
+  }
+});
+
+// REST API endpoint per statistiche PostgreSQL
+app.get('/api/stats', async (req, res) => {
+  try {
+    const stats = await getGameStats();
+
+    if (!stats) {
+      return res.json({
+        success: false,
+        message: 'Database non configurato o nessuna partita registrata',
+        stats: {
+          total_games: 0,
+          completed_games: 0,
+          ns_wins: 0,
+          ew_wins: 0,
+          avg_score_ns: 0,
+          avg_score_ew: 0
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      stats: {
+        total_games: parseInt(stats.total_games) || 0,
+        completed_games: parseInt(stats.completed_games) || 0,
+        ns_wins: parseInt(stats.ns_wins) || 0,
+        ew_wins: parseInt(stats.ew_wins) || 0,
+        avg_score_ns: parseFloat(stats.avg_score_ns) || 0,
+        avg_score_ew: parseFloat(stats.avg_score_ew) || 0
+      }
+    });
+  } catch (error) {
+    console.error('Errore nel recuperare le statistiche:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Errore nel recuperare le statistiche'
     });
   }
 });
