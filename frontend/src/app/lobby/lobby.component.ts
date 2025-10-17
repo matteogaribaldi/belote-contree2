@@ -38,6 +38,8 @@ export class LobbyComponent implements OnInit {
   showStatsModal = false;
   loadingStats = false;
   gameStats: any = null;
+  playerStats: any[] = [];
+  gamesList: any[] = [];
 
   constructor(
     private socketService: SocketService,
@@ -178,13 +180,25 @@ Buon divertimento! 🎉`);
     this.loadingStats = true;
 
     const backendUrl = environment.socketUrl.replace(/\/$/, '');
-    this.http.get<any>(`${backendUrl}/api/stats`).subscribe({
+
+    // Carica statistiche giocatori
+    this.http.get<any>(`${backendUrl}/api/player-stats`).subscribe({
       next: (data) => {
-        this.gameStats = data.stats;
+        this.playerStats = data.players || [];
+      },
+      error: (error) => {
+        console.error('Errore nel caricare le statistiche giocatori:', error);
+      }
+    });
+
+    // Carica lista partite
+    this.http.get<any>(`${backendUrl}/api/games-list?limit=20`).subscribe({
+      next: (data) => {
+        this.gamesList = data.games || [];
         this.loadingStats = false;
       },
       error: (error) => {
-        console.error('Errore nel caricare le statistiche:', error);
+        console.error('Errore nel caricare la lista partite:', error);
         this.loadingStats = false;
         this.showError('Errore nel caricare le statistiche');
       }
@@ -215,5 +229,10 @@ Buon divertimento! 🎉`);
       hour: '2-digit',
       minute: '2-digit'
     });
+  }
+
+  getFormattedDate(dateString: string): string {
+    const date = new Date(dateString);
+    return this.formatDate(date.getTime());
   }
 }

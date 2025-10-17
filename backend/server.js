@@ -4,7 +4,7 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const RoomManager = require('./game/RoomManager');
 const { getRecentGames, getTotalGames } = require('./game/database');
-const { initializeDatabase, getGameStats } = require('./database/db');
+const { initializeDatabase, getGameStats, getPlayerStats, getGamesList } = require('./database/db');
 
 const app = express();
 app.use(cors({
@@ -144,6 +144,78 @@ app.get('/api/stats', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Errore nel recuperare le statistiche'
+    });
+  }
+});
+
+// REST API endpoint per statistiche giocatori
+app.get('/api/player-stats', async (req, res) => {
+  try {
+    const playerStats = await getPlayerStats();
+
+    if (!playerStats) {
+      return res.json({
+        success: false,
+        message: 'Database non configurato o nessuna partita registrata',
+        players: []
+      });
+    }
+
+    res.json({
+      success: true,
+      players: playerStats.map(p => ({
+        name: p.player_name,
+        totalGames: parseInt(p.total_games) || 0,
+        wins: parseInt(p.wins) || 0
+      }))
+    });
+  } catch (error) {
+    console.error('Errore nel recuperare le statistiche giocatori:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Errore nel recuperare le statistiche giocatori'
+    });
+  }
+});
+
+// REST API endpoint per lista partite completate
+app.get('/api/games-list', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const gamesList = await getGamesList(limit);
+
+    if (!gamesList) {
+      return res.json({
+        success: false,
+        message: 'Database non configurato o nessuna partita registrata',
+        games: []
+      });
+    }
+
+    res.json({
+      success: true,
+      totalGames: gamesList.length,
+      games: gamesList.map(g => ({
+        roomCode: g.room_code,
+        createdAt: g.created_at,
+        endedAt: g.ended_at,
+        winningTeam: g.winning_team,
+        scoreNS: g.final_score_ns,
+        scoreEW: g.final_score_ew,
+        totalHands: g.total_hands,
+        players: {
+          north: { name: g.player_north, isBot: g.is_bot_north },
+          east: { name: g.player_east, isBot: g.is_bot_east },
+          south: { name: g.player_south, isBot: g.is_bot_south },
+          west: { name: g.player_west, isBot: g.is_bot_west }
+        }
+      }))
+    });
+  } catch (error) {
+    console.error('Errore nel recuperare la lista partite:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Errore nel recuperare la lista partite'
     });
   }
 });

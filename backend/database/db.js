@@ -130,6 +130,88 @@ async function getGameStats() {
   }
 }
 
+// Get player-specific statistics (wins by player name)
+async function getPlayerStats() {
+  if (!process.env.DATABASE_URL) return null;
+
+  try {
+    const result = await pool.query(`
+      WITH player_games AS (
+        SELECT player_north AS player_name, winning_team,
+               CASE WHEN winning_team = 'NS' THEN 1 ELSE 0 END AS won
+        FROM games
+        WHERE player_north IS NOT NULL AND is_bot_north = false AND ended_at IS NOT NULL
+
+        UNION ALL
+
+        SELECT player_south AS player_name, winning_team,
+               CASE WHEN winning_team = 'NS' THEN 1 ELSE 0 END AS won
+        FROM games
+        WHERE player_south IS NOT NULL AND is_bot_south = false AND ended_at IS NOT NULL
+
+        UNION ALL
+
+        SELECT player_east AS player_name, winning_team,
+               CASE WHEN winning_team = 'EW' THEN 1 ELSE 0 END AS won
+        FROM games
+        WHERE player_east IS NOT NULL AND is_bot_east = false AND ended_at IS NOT NULL
+
+        UNION ALL
+
+        SELECT player_west AS player_name, winning_team,
+               CASE WHEN winning_team = 'EW' THEN 1 ELSE 0 END AS won
+        FROM games
+        WHERE player_west IS NOT NULL AND is_bot_west = false AND ended_at IS NOT NULL
+      )
+      SELECT
+        player_name,
+        COUNT(*) AS total_games,
+        SUM(won) AS wins
+      FROM player_games
+      GROUP BY player_name
+      ORDER BY wins DESC, total_games DESC
+    `);
+    return result.rows;
+  } catch (error) {
+    console.error('✗ Error fetching player stats:', error.message);
+    return null;
+  }
+}
+
+// Get list of completed games
+async function getGamesList(limit = 50) {
+  if (!process.env.DATABASE_URL) return null;
+
+  try {
+    const result = await pool.query(`
+      SELECT
+        room_code,
+        created_at,
+        ended_at,
+        winning_team,
+        final_score_ns,
+        final_score_ew,
+        total_hands,
+        player_north,
+        player_east,
+        player_south,
+        player_west,
+        is_bot_north,
+        is_bot_east,
+        is_bot_south,
+        is_bot_west
+      FROM games
+      WHERE ended_at IS NOT NULL
+      ORDER BY ended_at DESC
+      LIMIT $1
+    `, [limit]);
+    return result.rows;
+  } catch (error) {
+    console.error('✗ Error fetching games list:', error.message);
+    return null;
+  }
+}
+
 module.exports = {
   pool,
   initializeDatabase,
@@ -137,5 +219,7 @@ module.exports = {
   updateGamePlayers,
   endGame,
   recordHand,
-  getGameStats
+  getGameStats,
+  getPlayerStats,
+  getGamesList
 };
