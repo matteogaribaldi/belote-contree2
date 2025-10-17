@@ -3,6 +3,7 @@ const GameLogic = require('./GameLogic');
 const BotPlayer = require('./BotPlayer');
 const AdvancedBotPlayer = require('./AdvancedBotPlayer');
 const { saveGame } = require('./database');
+const { createGame, updateGamePlayers, endGame } = require('../database/db');
 
 class RoomManager {
   constructor(io) {
@@ -22,7 +23,7 @@ class RoomManager {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   }
 
-  createRoom(socket, playerName) {
+  async createRoom(socket, playerName) {
     // Controlla se esiste già una stanza in waiting
     const existingRoom = Array.from(this.rooms.values()).find(r => r.state === 'waiting');
 
@@ -32,6 +33,7 @@ class RoomManager {
     }
 
     const roomCode = this.generateRoomCode();
+    const creatorIp = socket.handshake.address;
 
     const room = {
       code: roomCode,
@@ -72,6 +74,9 @@ class RoomManager {
     socket.emit('roomCreated', { roomCode, playerName });
 
     console.log(`Stanza creata: ${roomCode} da ${playerName}`);
+
+    // Salva la creazione della partita nel database PostgreSQL
+    await createGame(roomCode, creatorIp);
 
     this.broadcastRoomState(roomCode);
     this.broadcastActiveRooms();
@@ -168,7 +173,7 @@ class RoomManager {
     }
   }
 
-  startGame(socket, roomCode) {
+  async startGame(socket, roomCode) {
     const room = this.rooms.get(roomCode);
     if (!room || socket.id !== room.host) return;
 
@@ -183,6 +188,15 @@ class RoomManager {
 
     this.broadcastRoomState(roomCode);
     this.broadcastActiveRooms();
+
+    // Aggiorna nomi giocatori e bot nel database
+    const playerMap = {
+      N: this.getPlayerName(room, 'north'),
+      E: this.getPlayerName(room, 'east'),
+      S: this.getPlayerName(room, 'south'),
+      W: this.getPlayerName(room, 'west')
+    };
+    await updateGamePlayers(roomCode, playerMap, room.bots);
 
     this.initializeGame(room);
 
@@ -570,7 +584,7 @@ completeTrick(room) {
 }
 
 
-  endHand(room) {
+  async endHand(room) {
     const lastTrick = room.game.tricks[room.game.tricks.length - 1];
     if (lastTrick.winner === 'north' || lastTrick.winner === 'south') {
       room.game.score.northSouth += 10;
@@ -665,8 +679,18 @@ completeTrick(room) {
       room.game.winner = room.gameScore.northSouth >= targetScore ? 'northSouth' : 'eastWest';
       console.log(`🎮 GAME OVER! Winner: ${room.game.winner}`);
 
-      // Salva la partita completata nel database
+      // Salva la partita completata nel database SQLite (locale)
       this.saveGameToDatabase(room);
+
+      // Salva la partita completata nel database PostgreSQL (cloud)
+      const winningTeam = room.game.winner === 'northSouth' ? 'NS' : 'EW';
+      await endGame(
+        room.code,
+        winningTeam,
+        room.gameScore.northSouth,
+        room.gameScore.eastWest,
+        room.handHistory.length
+      );
     }
 
     this.broadcastGameState(room.code);
@@ -1075,6 +1099,12 @@ completeTrick(room) {
       west: 'Ovest'
     };
     return labels[position] || position;
+  }
+
+  getPlayerName(room, position) {
+    const socketId = room.players[position];
+    if (!socketId) return null;
+    return room.playerNames[socketId] || 'Giocatore';
   }
 
   getActiveRooms() {

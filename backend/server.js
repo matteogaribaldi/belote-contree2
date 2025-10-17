@@ -4,6 +4,7 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const RoomManager = require('./game/RoomManager');
 const { getRecentGames, getTotalGames } = require('./game/database');
+const { initializeDatabase } = require('./database/db');
 
 const app = express();
 app.use(cors({
@@ -108,6 +109,7 @@ app.get('/api/game-history', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`Server in ascolto sulla porta ${PORT}`);
+  await initializeDatabase();
 });
