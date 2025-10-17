@@ -11,6 +11,7 @@ class BotPlayer {
 
   makeBid(hand, currentBid, position, allBids = [], game = null) {
     this.position = position;
+    this.currentHand = hand; // Salva la mano corrente per usarla nelle funzioni
 
     // Trova il seme migliore
     const bestSuit = this.findBestSuit(hand);
@@ -47,12 +48,27 @@ class BotPlayer {
       const hasJackOrNine = hand.some(c =>
         c.suit === partnerSuit && (c.rank === 'J' || c.rank === '9')
       );
-      const hasAceOutside = hand.some(c =>
+      const acesOutside = hand.filter(c =>
         c.suit !== partnerSuit && c.rank === 'A'
       );
 
-      if (hasJackOrNine || hasAceOutside) {
+      // Nuova logica: se partner punta 80, rilancio con J o 9 del suo seme
+      if (partnerPoints === 80 && hasJackOrNine) {
         const newPoints = partnerPoints + 10;
+        if (newPoints <= 160) {
+          this.hasRaisedOnPartner = true;
+          return {
+            type: 'bid',
+            suit: partnerSuit,
+            points: newPoints
+          };
+        }
+      }
+
+      // Se partner punta 90+, rilancio con asso/i esterno/i
+      if (partnerPoints >= 90 && acesOutside.length > 0) {
+        const raiseAmount = acesOutside.length >= 2 ? 20 : 10;
+        const newPoints = partnerPoints + raiseAmount;
         if (newPoints <= 160) {
           this.hasRaisedOnPartner = true;
           return {
@@ -106,14 +122,32 @@ class BotPlayer {
 
   // CASO 3: Apertura (nessuno ha puntato)
   handleOpeningBid(estimate, bestSuit) {
-    if (estimate >= 90) {
-      return { type: 'bid', suit: bestSuit, points: 100 };
-    }
-    if (estimate >= 75) {
+    // Nuova logica basata su carte specifiche
+    const hand = this.currentHand; // Dobbiamo salvare la mano corrente
+    const suitCards = hand.filter(c => c.suit === bestSuit);
+
+    const hasJack = suitCards.some(c => c.rank === 'J');
+    const hasNine = suitCards.some(c => c.rank === '9');
+    const acesOutside = hand.filter(c => c.suit !== bestSuit && c.rank === 'A');
+
+    // Regola 1: J + 9 + altra carta del seme → 90
+    if (hasJack && hasNine && suitCards.length >= 3) {
       return { type: 'bid', suit: bestSuit, points: 90 };
     }
-    if (estimate >= 60) {
+
+    // Regola 2: J + 9 + asso esterno → 90
+    if (hasJack && hasNine && acesOutside.length >= 1) {
+      return { type: 'bid', suit: bestSuit, points: 90 };
+    }
+
+    // Regola 3: (J o 9) + altre carte del seme + asso esterno → 80
+    if ((hasJack || hasNine) && suitCards.length >= 2 && acesOutside.length >= 1) {
       return { type: 'bid', suit: bestSuit, points: 80 };
+    }
+
+    // Fallback alla logica precedente per mani molto forti
+    if (estimate >= 90) {
+      return { type: 'bid', suit: bestSuit, points: 100 };
     }
 
     return { type: 'pass' };
