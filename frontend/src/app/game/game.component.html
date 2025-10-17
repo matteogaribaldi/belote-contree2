@@ -1,9 +1,6 @@
 <div class="game-container" *ngIf="gameState">
   <!-- Header con punteggi -->
   <div class="game-header">
-    <button class="audio-toggle" (click)="toggleAudio()" title="Toggle audio">
-      {{ audioService.isEnabled() ? '🔊' : '🔇' }}
-    </button>
     <div class="score-panel">
       <div class="team-score" [class.my-team]="isMyTeam('northSouth')">
         <h3>{{ getTeamNames('northSouth') }}</h3>

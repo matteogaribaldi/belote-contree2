@@ -8,9 +8,6 @@
   <button class="info-btn-fixed" (click)="showInfo()" title="Informazioni">
     <span>ℹ</span>
   </button>
-  <button class="history-btn-fixed" (click)="showHistory()" title="Storico Partite">
-    <span>📊</span>
-  </button>
   <div class="lobby-card">
     <div class="champions-logo">
       <picture>
@@ -62,44 +59,4 @@
     </div>
   </div>
 
-  <!-- Modal per lo storico partite -->
-  <div class="history-modal" *ngIf="showHistoryModal" [@fadeInOut] (click)="closeHistory()">
-    <div class="history-content" (click)="$event.stopPropagation()">
-      <button class="close-btn" (click)="closeHistory()">✕</button>
-      <h2>📊 Storico Partite</h2>
-
-      <div class="history-stats" *ngIf="gameHistory">
-        <p>Totale partite completate: <strong>{{ gameHistory.totalGames }}</strong></p>
-      </div>
-
-      <div class="loading" *ngIf="loadingHistory">
-        <div class="spinner"></div>
-        <p>Caricamento...</p>
-      </div>
-
-      <div class="history-list" *ngIf="!loadingHistory && gameHistory">
-        <div class="history-item" *ngFor="let game of gameHistory.games">
-          <div class="game-header">
-            <span class="game-code">🎮 {{ game.room_code }}</span>
-            <span class="game-date">{{ formatDate(game.timestamp) }}</span>
-          </div>
-          <div class="game-players">
-            <span *ngFor="let player of game.players"
-                  [class.bot-player]="player.isBot">
-              {{ player.name }} ({{ player.position }})
-            </span>
-          </div>
-          <div class="game-result">
-            <span class="winner">🏆 {{ game.winner_team === 'northSouth' ? 'Nord-Sud' : 'Est-Ovest' }}</span>
-            <span class="score">{{ game.finalScore.northSouth }} - {{ game.finalScore.eastWest }}</span>
-            <span class="hands">{{ game.hands_played }} mani</span>
-          </div>
-        </div>
-
-        <div class="no-games" *ngIf="gameHistory.games.length === 0">
-          <p>Nessuna partita completata ancora</p>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>

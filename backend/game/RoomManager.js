@@ -659,9 +659,11 @@ completeTrick(room) {
 
     // Controlla se qualcuno ha raggiunto il punteggio target
     const targetScore = room.targetScore || 501;
+    console.log(`🔍 Check fine partita: NS=${room.gameScore.northSouth}, EW=${room.gameScore.eastWest}, target=${targetScore}`);
     if (room.gameScore.northSouth >= targetScore || room.gameScore.eastWest >= targetScore) {
       room.game.gameOver = true;
       room.game.winner = room.gameScore.northSouth >= targetScore ? 'northSouth' : 'eastWest';
+      console.log(`🎮 GAME OVER! Winner: ${room.game.winner}`);
 
       // Salva la partita completata nel database
       this.saveGameToDatabase(room);
