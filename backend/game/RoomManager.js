@@ -1245,7 +1245,7 @@ completeTrick(room) {
         playerIps,
         room.game.winner,
         room.gameScore,
-        room.game.handHistory.length,
+        room.handHistory.length,
         room.targetScore || 501
       );
 
