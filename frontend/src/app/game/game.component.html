@@ -51,7 +51,7 @@
               {{ getSuitSymbol(bidEntry.bid.suit) }}
             </span>
           </span>
-          <span *ngIf="bidEntry.bid.type === 'cappotto'" class="cappotto-badge">Cappotto (250)</span>
+          <span *ngIf="bidEntry.bid.type === 'cappotto'" class="cappotto-badge">Cappotto (500)</span>
           <span *ngIf="bidEntry.bid.type === 'contro'" class="contro-badge">Contro</span>
           <span *ngIf="bidEntry.bid.type === 'surcontre'" class="surcontre-badge">Surcontre</span>
         </div>
@@ -98,7 +98,7 @@
           *ngIf="canCappotto()"
           (click)="placeCappotto()"
         >
-          Cappotto (250)
+          Cappotto (500)
         </button>
         <button
           class="btn-contro"

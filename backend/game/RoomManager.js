@@ -627,12 +627,12 @@ completeTrick(room) {
       });
 
       if (madeAllTricks) {
-        // Cappotto riuscito: 250 punti alla squadra che ha dichiarato
-        finalScore[contractTeam] = 250 * multiplier;
+        // Cappotto riuscito: 500 punti alla squadra che ha dichiarato
+        finalScore[contractTeam] = 500 * multiplier;
         finalScore[otherTeam] = 0;
       } else {
-        // Cappotto fallito: 250 punti alla squadra avversaria
-        finalScore[otherTeam] = 250 * multiplier;
+        // Cappotto fallito: 500 punti alla squadra avversaria
+        finalScore[otherTeam] = 500 * multiplier;
         finalScore[contractTeam] = 0;
       }
     } else {
