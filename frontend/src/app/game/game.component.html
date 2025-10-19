@@ -133,10 +133,11 @@
     <div class="player-hand-bidding">
       <h3>Le tue carte</h3>
       <div class="cards">
-        <div 
-          *ngFor="let card of gameState.hand"
+        <div
+          *ngFor="let card of gameState.hand; let i = index"
           class="card"
-          [class]="getCardClass(card)"
+          [class.red]="card.suit === 'hearts' || card.suit === 'diamonds'"
+          [class.black]="card.suit === 'clubs' || card.suit === 'spades'"
         >
           <div class="card-rank">{{ card.rank }}</div>
           <div class="card-suit">{{ getSuitSymbol(card.suit) }}</div>
@@ -190,11 +191,17 @@
         <div
           *ngFor="let position of ['north', 'east', 'south', 'west']"
           class="trick-card"
-          [class]="getTrickPosition(position)"
+          [class.top]="position === 'north'"
+          [class.bottom]="position === 'south'"
+          [class.left]="position === 'west'"
+          [class.right]="position === 'east'"
           [class.visible]="gameState.currentTrick[position]"
           [class.winning-card]="isWinningCard(position)"
+          [class.collecting]="collectingTrick"
         >
-          <div class="card" *ngIf="gameState.currentTrick[position]" [class]="getCardClass(gameState.currentTrick[position])">
+          <div class="card" *ngIf="gameState.currentTrick[position]"
+               [class.red]="gameState.currentTrick[position].suit === 'hearts' || gameState.currentTrick[position].suit === 'diamonds'"
+               [class.black]="gameState.currentTrick[position].suit === 'clubs' || gameState.currentTrick[position].suit === 'spades'">
             <div class="card-rank">{{ gameState.currentTrick[position].rank }}</div>
             <div class="card-suit">{{ getSuitSymbol(gameState.currentTrick[position].suit) }}</div>
           </div>
@@ -228,10 +235,11 @@
     <div class="player-hand">
       <h3>La tua mano</h3>
       <div class="cards">
-        <div 
-          *ngFor="let card of gameState.hand"
+        <div
+          *ngFor="let card of gameState.hand; let i = index"
           class="card"
-          [class]="getCardClass(card)"
+          [class.red]="card.suit === 'hearts' || card.suit === 'diamonds'"
+          [class.black]="card.suit === 'clubs' || card.suit === 'spades'"
           [class.playable]="isMyTurn()"
           (click)="playCard(card)"
         >

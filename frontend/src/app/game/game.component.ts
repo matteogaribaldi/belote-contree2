@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { SocketService } from '../services/socket.service';
 import { AudioService } from '../services/audio.service';
 import { Subscription } from 'rxjs';
-import { trigger, transition, style, animate } from '@angular/animations';
+import { trigger, transition, style, animate, state, keyframes } from '@angular/animations';
 
 @Component({
   selector: 'app-game',
@@ -21,6 +21,29 @@ import { trigger, transition, style, animate } from '@angular/animations';
       transition(':leave', [
         animate('300ms ease-in', style({ opacity: 0, transform: 'translateY(-10px) scale(0.8)' }))
       ])
+    ]),
+    trigger('cardDeal', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translate(-50vw, -50vh) scale(0.3) rotate(0deg)' }),
+        animate('600ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          style({ opacity: 1, transform: 'translate(0, 0) scale(1) rotate(0deg)' }))
+      ])
+    ]),
+    trigger('cardPlay', [
+      state('hand', style({ transform: 'translateY(0) scale(1) rotate(0deg)' })),
+      state('table', style({ transform: 'translateY(-200px) scale(1.1) rotate(5deg)' })),
+      transition('hand => table', [
+        animate('500ms cubic-bezier(0.34, 1.56, 0.64, 1)')
+      ])
+    ]),
+    trigger('trickCollect', [
+      transition(':leave', [
+        animate('600ms ease-in', keyframes([
+          style({ opacity: 1, transform: 'scale(1) rotate(0deg)', offset: 0 }),
+          style({ opacity: 1, transform: 'scale(1.1) rotate(5deg)', offset: 0.3 }),
+          style({ opacity: 0, transform: 'scale(0.5) rotate(15deg) translateY(-100px)', offset: 1 })
+        ]))
+      ])
     ])
   ]
 })
@@ -32,7 +55,13 @@ export class GameComponent implements OnInit, OnDestroy {
   showWinnerAnnouncement = false;
   showWinningCard = false;
   winningCardPosition: string = '';
-  showInitialHands = false; 
+  showInitialHands = false;
+
+  // Animation state properties
+  dealingCards = false;
+  playingCardId: string | null = null;
+  collectingTrick = false;
+  cardAnimationStates: Map<string, string> = new Map(); 
 
   suitSymbols: any = {
     hearts: '♥',
@@ -83,6 +112,13 @@ this.subscriptions.push(
     if (previousState && !previousState.biddingPhase && state.biddingPhase) {
       this.audioService.play('newHand');
       this.audioService.play('shuffle');
+      // Trigger card dealing animation
+      this.triggerCardDealAnimation();
+    }
+
+    // Handle new hand dealt (from bidding to playing phase)
+    if (previousState?.biddingPhase && !state.biddingPhase && state.hand?.length > 0) {
+      this.triggerCardDealAnimation();
     }
 
     // Riproduci suono quando viene giocata una carta
@@ -123,10 +159,14 @@ this.subscriptions.push(
       }, 600);
     }
 
-    // Reset quando il trick viene pulito dal server
+    // Reset quando il trick viene pulito dal server - trigger collection animation
     if (!trickComplete && previousTrickComplete) {
-      this.showWinningCard = false;
-      this.winningCardPosition = '';
+      this.triggerTrickCollectionAnimation();
+      setTimeout(() => {
+        this.showWinningCard = false;
+        this.winningCardPosition = '';
+        this.collectingTrick = false;
+      }, 700);
     }
   })
 );
@@ -179,7 +219,17 @@ this.subscriptions.push(
 
   playCard(card: any) {
     if (!this.isMyTurn() || this.gameState.biddingPhase) return;
-    this.socketService.playCard(this.roomCode, card);
+
+    // Set animation state for this card
+    const cardId = this.getCardId(card);
+    this.playingCardId = cardId;
+    this.cardAnimationStates.set(cardId, 'table');
+
+    // Send play card request with slight delay for animation
+    setTimeout(() => {
+      this.socketService.playCard(this.roomCode, card);
+      this.playingCardId = null;
+    }, 100);
   }
 
   getCardClass(card: any): string {
@@ -381,5 +431,30 @@ this.subscriptions.push(
       .map(card => card.rank);
 
     return cardsInSuit.length > 0 ? cardsInSuit.join(' ') : '-';
+  }
+
+  // Animation helper methods
+  getCardId(card: any): string {
+    return `${card.suit}-${card.rank}`;
+  }
+
+  getCardDelay(index: number): string {
+    return `${index * 50}ms`;
+  }
+
+  triggerCardDealAnimation() {
+    this.dealingCards = true;
+    setTimeout(() => {
+      this.dealingCards = false;
+    }, 1000);
+  }
+
+  triggerTrickCollectionAnimation() {
+    this.collectingTrick = true;
+  }
+
+  getCardAnimationState(card: any): string {
+    const cardId = this.getCardId(card);
+    return this.cardAnimationStates.get(cardId) || 'hand';
   }
 }
