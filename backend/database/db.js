@@ -2,14 +2,31 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-// Database configuration
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+// Database configuration - only create pool if DATABASE_URL is valid
+let pool = null;
+
+if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('postgres://')) {
+  try {
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    });
+    console.log('✓ Database pool created');
+  } catch (error) {
+    console.error('✗ Database pool creation error:', error.message);
+    pool = null;
+  }
+} else {
+  console.log('⚠ DATABASE_URL not configured or invalid, running without database');
+}
 
 // Initialize database schema
 async function initializeDatabase() {
+  if (!pool) {
+    console.log('⚠ Database not available, skipping initialization');
+    return;
+  }
+
   try {
     const schemaPath = path.join(__dirname, 'schema.sql');
     const schema = fs.readFileSync(schemaPath, 'utf8');
@@ -17,14 +34,13 @@ async function initializeDatabase() {
     console.log('✓ Database schema initialized');
   } catch (error) {
     console.error('✗ Database initialization error:', error.message);
-    // Don't throw - allow app to run without database in development
+    // Don't throw - allow app to run without database
   }
 }
 
 // Insert new game when room is created
 async function createGame(roomCode, creatorIp) {
-  if (!process.env.DATABASE_URL) {
-    console.log('⚠ Database not configured, skipping game creation');
+  if (!pool) {
     return null;
   }
 
@@ -43,7 +59,7 @@ async function createGame(roomCode, creatorIp) {
 
 // Update game when players join or start
 async function updateGamePlayers(roomCode, players, bots) {
-  if (!process.env.DATABASE_URL) return;
+  if (!pool) return;
 
   try {
     await pool.query(
@@ -70,7 +86,7 @@ async function updateGamePlayers(roomCode, players, bots) {
 
 // End game and record winner
 async function endGame(roomCode, winningTeam, scoreNS, scoreEW, totalHands) {
-  if (!process.env.DATABASE_URL) return;
+  if (!pool) return;
 
   try {
     await pool.query(
@@ -91,7 +107,7 @@ async function endGame(roomCode, winningTeam, scoreNS, scoreEW, totalHands) {
 
 // Record individual hand result (optional, for detailed analytics)
 async function recordHand(roomCode, handNumber, contractTeam, contractAmount, contractSuit, declarer, scoreNS, scoreEW, contractMade) {
-  if (!process.env.DATABASE_URL) return;
+  if (!pool) return;
 
   try {
     const gameResult = await pool.query('SELECT id FROM games WHERE room_code = $1', [roomCode]);
@@ -110,7 +126,7 @@ async function recordHand(roomCode, handNumber, contractTeam, contractAmount, co
 
 // Get game statistics (for future analytics endpoint)
 async function getGameStats() {
-  if (!process.env.DATABASE_URL) return null;
+  if (!pool) return null;
 
   try {
     const result = await pool.query(`
@@ -132,7 +148,7 @@ async function getGameStats() {
 
 // Get player-specific statistics (wins by player name)
 async function getPlayerStats() {
-  if (!process.env.DATABASE_URL) return null;
+  if (!pool) return null;
 
   try {
     const result = await pool.query(`
@@ -180,7 +196,7 @@ async function getPlayerStats() {
 
 // Get list of completed games
 async function getGamesList(limit = 50) {
-  if (!process.env.DATABASE_URL) return null;
+  if (!pool) return null;
 
   try {
     const result = await pool.query(`
