@@ -24,16 +24,20 @@ class RoomManager {
   }
 
   async createRoom(socket, playerName) {
+    console.log('📝 createRoom called:', { socketId: socket.id, playerName });
+
     // Controlla se esiste già una stanza in waiting
     const existingRoom = Array.from(this.rooms.values()).find(r => r.state === 'waiting');
 
     if (existingRoom) {
+      console.log('⚠️  Existing room found, rejecting:', existingRoom.code);
       socket.emit('error', { message: 'Esiste già una stanza in attesa. Unisciti a quella invece di crearne una nuova.' });
       return;
     }
 
     const roomCode = this.generateRoomCode();
     const creatorIp = socket.handshake.address;
+    console.log('✅ Creating new room:', { roomCode, creatorIp, playerName });
 
     const room = {
       code: roomCode,
@@ -71,9 +75,10 @@ class RoomManager {
     room.playerNames[socket.id] = playerName;
 
     socket.join(roomCode);
+    console.log('🚀 Emitting roomCreated event:', { roomCode, playerName, socketId: socket.id });
     socket.emit('roomCreated', { roomCode, playerName });
 
-    console.log(`Stanza creata: ${roomCode} da ${playerName}`);
+    console.log(`✅ Stanza creata: ${roomCode} da ${playerName}`);
 
     // Salva la creazione della partita nel database PostgreSQL
     await createGame(roomCode, creatorIp);
