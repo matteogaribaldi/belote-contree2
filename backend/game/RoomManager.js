@@ -18,7 +18,7 @@ class RoomManager {
     this.disconnectedPlayers = new Map(); // { roomCode-position: { playerName, timeout } }
     this.reconnectionTimeout = 60000; // 60 secondi
     this.turnTimeouts = new Map(); // { roomCode: timeoutId }
-    this.TURN_TIMEOUT_MS = 10000; // 10 secondi
+    this.TURN_TIMEOUT_MS = 20000; // 20 secondi
   }
 
   generateRoomCode() {
