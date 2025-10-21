@@ -94,8 +94,8 @@ class GameLogic {
         return false;
       }
 
-      // Se gioco atout, devo surclassare se posso
-      if (card.suit === trump) {
+      // Se gioco atout, devo surclassare se posso (ma solo se il partner NON sta vincendo)
+      if (card.suit === trump && !partnerWinning) {
         const trumpsInTrick = Object.values(trick).filter(c => c.suit === trump);
         if (trumpsInTrick.length > 0) {
           const highestTrump = trumpsInTrick.reduce((max, c) =>

@@ -187,11 +187,4 @@ export class WaitingRoomComponent implements OnInit, OnDestroy {
       this.socketService.setTargetScore(this.roomCode, score);
     }
   }
-
-  toggleAdvancedBotAI() {
-    if (this.isHost()) {
-      const newValue = !this.roomState.advancedBotAI;
-      this.socketService.setAdvancedBotAI(this.roomCode, newValue);
-    }
-  }
 }
