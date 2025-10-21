@@ -32,6 +32,21 @@
     </div>
   </div>
 
+  <!-- Timer bar -->
+  <div class="turn-timer-container" *ngIf="!gameState.gameOver">
+    <div class="timer-label">
+      <span *ngIf="isMyTurn()" class="my-turn">È il tuo turno!</span>
+      <span *ngIf="!isMyTurn()">Turno di {{ getPositionLabel(gameState.currentPlayer) }}</span>
+    </div>
+    <div class="timer-bar-wrapper"
+         [class.warning]="timerPercentage < 50 && timerPercentage >= 25"
+         [class.critical]="timerPercentage < 25">
+      <div class="timer-bar"
+           [style.width.%]="100 - timerPercentage">
+      </div>
+    </div>
+  </div>
+
   <!-- Fase di puntata -->
   <div class="bidding-phase" *ngIf="gameState.biddingPhase">
     <h2>Fase di Puntata</h2>

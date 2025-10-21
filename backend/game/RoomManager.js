@@ -17,6 +17,8 @@ class RoomManager {
     this.dealerRotation = ['north', 'east', 'south', 'west'];
     this.disconnectedPlayers = new Map(); // { roomCode-position: { playerName, timeout } }
     this.reconnectionTimeout = 60000; // 60 secondi
+    this.turnTimeouts = new Map(); // { roomCode: timeoutId }
+    this.TURN_TIMEOUT_MS = 10000; // 10 secondi
   }
 
   generateRoomCode() {
@@ -251,7 +253,9 @@ room.game = {
   contro: false,
   surcontre: false,
   gameOver: false,
-  winner: null
+  winner: null,
+  turnStartTime: Date.now(),
+  turnTimeoutMs: this.TURN_TIMEOUT_MS
 };
 
   // Ordina le carte DOPO aver inizializzato room.game
@@ -261,6 +265,9 @@ room.game = {
   this.logGameStart(room, hands, dealer, firstPlayer);
 
   this.broadcastGameState(room.code);
+
+  // Avvia il timer per il primo giocatore
+  this.startTurnTimer(room.code, firstPlayer);
 
   if (this.isBot(room, firstPlayer)) {
     setTimeout(() => this.botBid(room, firstPlayer), 500);
@@ -281,6 +288,9 @@ room.game = {
       }
       return;
     }
+
+    // Cancella il timer del turno corrente
+    this.clearTurnTimer(roomCode);
 
     room.game.bids.push({ player: position, bid });
 
@@ -303,8 +313,12 @@ room.game = {
 
       room.game.biddingPhase = false;
       room.game.currentPlayer = this.gameLogic.getNextPlayer(room.game.dealer);
+      room.game.turnStartTime = Date.now();
 
       this.broadcastGameState(room.code);
+
+      // Avvia timer per il giocatore che inizia a giocare
+      this.startTurnTimer(room.code, room.game.currentPlayer);
 
       if (this.isBot(room, room.game.currentPlayer)) {
         setTimeout(() => this.botPlay(room, room.game.currentPlayer), 500);
@@ -345,8 +359,12 @@ room.game = {
 
     room.game.biddingPhase = false;
     room.game.currentPlayer = this.gameLogic.getNextPlayer(room.game.dealer);
+    room.game.turnStartTime = Date.now();
 
     this.broadcastGameState(room.code);
+
+    // Avvia timer per il giocatore che inizia a giocare
+    this.startTurnTimer(room.code, room.game.currentPlayer);
 
     if (this.isBot(room, room.game.currentPlayer)) {
       setTimeout(() => this.botPlay(room, room.game.currentPlayer), 500);
@@ -362,7 +380,11 @@ room.game = {
 }
 
     room.game.currentPlayer = this.gameLogic.getNextPlayer(room.game.currentPlayer);
+    room.game.turnStartTime = Date.now();
     this.broadcastGameState(room.code);
+
+    // Avvia timer per il prossimo giocatore
+    this.startTurnTimer(room.code, room.game.currentPlayer);
 
     if (this.isBot(room, room.game.currentPlayer)) {
       setTimeout(() => this.botBid(room, room.game.currentPlayer), 500);
@@ -473,6 +495,9 @@ playCard(socket, roomCode, card, botPosition = null) {
       return;
     }
 
+    // Cancella il timer del turno corrente
+    this.clearTurnTimer(roomCode);
+
     const beloteCheck = this.gameLogic.checkBeloteRebelote(card, hand, room.game.trump);
     let isBelote = false;
     let isRebelote = false;
@@ -523,7 +548,11 @@ playCard(socket, roomCode, card, botPosition = null) {
   this.completeTrick(room);
 } else {
   room.game.currentPlayer = this.gameLogic.getNextPlayer(room.game.currentPlayer);
+  room.game.turnStartTime = Date.now();
   this.broadcastGameState(room.code);
+
+  // Avvia timer per il prossimo giocatore
+  this.startTurnTimer(room.code, room.game.currentPlayer);
 
   // Se il prossimo è un bot
   if (this.isBot(room, room.game.currentPlayer)) {
@@ -572,11 +601,15 @@ completeTrick(room) {
     room.game.trickDisplaying = false;
     room.game.currentTrick = {};
     room.game.currentPlayer = winner;
+    room.game.turnStartTime = Date.now();
 
     if (handsEmpty) {
       this.endHand(room);
     } else {
       this.broadcastGameState(room.code);
+
+      // Avvia timer per il vincitore del trick
+      this.startTurnTimer(room.code, room.game.currentPlayer);
 
       // Se il vincitore è un bot, fallo giocare
       if (this.isBot(room, room.game.currentPlayer)) {
@@ -1089,7 +1122,9 @@ completeTrick(room) {
         gameOver: room.game.gameOver,
         winner: room.game.winner,
         lastSpeechBubble: room.game.lastSpeechBubble,
-        initialHands: room.game.initialHands // Invia carte iniziali per visualizzazione fine mano
+        initialHands: room.game.initialHands, // Invia carte iniziali per visualizzazione fine mano
+        turnStartTime: room.game.turnStartTime,
+        turnTimeoutMs: room.game.turnTimeoutMs
       };
 
       this.io.to(socketId).emit('gameState', gameState);
@@ -1289,6 +1324,66 @@ completeTrick(room) {
       console.log(`✅ Partita ${room.code} salvata nel database`);
     } catch (error) {
       console.error('❌ Errore nel salvare la partita nel database:', error);
+    }
+  }
+
+  // ========== TIMER MANAGEMENT ==========
+
+  startTurnTimer(roomCode, position) {
+    const room = this.rooms.get(roomCode);
+    if (!room || !room.game) return;
+
+    // Non avviare timer per i bot
+    if (this.isBot(room, position)) return;
+
+    // Cancella eventuali timer precedenti
+    this.clearTurnTimer(roomCode);
+
+    // Imposta nuovo timer
+    const timeoutId = setTimeout(() => {
+      this.handleTurnTimeout(roomCode, position);
+    }, this.TURN_TIMEOUT_MS);
+
+    this.turnTimeouts.set(roomCode, timeoutId);
+  }
+
+  clearTurnTimer(roomCode) {
+    const timeoutId = this.turnTimeouts.get(roomCode);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      this.turnTimeouts.delete(roomCode);
+    }
+  }
+
+  handleTurnTimeout(roomCode, position) {
+    const room = this.rooms.get(roomCode);
+    if (!room || !room.game) return;
+
+    // Verifica che sia ancora il turno di questo giocatore
+    if (room.game.currentPlayer !== position) return;
+
+    console.log(`⏱️  Timeout per ${position} nella stanza ${roomCode}`);
+
+    // Gioca automaticamente come bot
+    if (room.game.biddingPhase) {
+      // Durante il bidding: passa automaticamente
+      this.placeBid({ id: 'timeout' }, roomCode, { type: 'pass' }, position);
+    } else {
+      // Durante il gioco: gioca una carta valida come bot
+      const hand = room.game.hands[position];
+      if (hand && hand.length > 0) {
+        const bot = room.advancedBotAI ? this.advancedBotPlayer : this.botPlayer;
+        const gameState = {
+          hands: room.game.hands,
+          currentTrick: room.game.currentTrick,
+          trump: room.game.trump,
+          tricks: room.game.tricks,
+          contract: room.game.contract,
+          score: room.game.score
+        };
+        const card = bot.playCard(hand, room.game.currentTrick, room.game.trump, position, room.game.contract, gameState);
+        this.playCard({ id: 'timeout' }, roomCode, card, position);
+      }
     }
   }
 }

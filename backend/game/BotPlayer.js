@@ -45,27 +45,37 @@ class BotPlayer {
 
     // CASO 1A: Supporto partner (solo prima volta e se nessun avversario ha rilanciato)
     if (!this.hasRaisedOnPartner && (!opponentsBid || opponentsBid.bid.type !== 'bid')) {
-      const hasJackOrNine = hand.some(c =>
-        c.suit === partnerSuit && (c.rank === 'J' || c.rank === '9')
-      );
-      const acesOutside = hand.filter(c =>
-        c.suit !== partnerSuit && c.rank === 'A'
-      );
+      const suitCards = hand.filter(c => c.suit === partnerSuit);
+      const hasJack = suitCards.some(c => c.rank === 'J');
+      const hasNine = suitCards.some(c => c.rank === '9');
+      const acesOutside = hand.filter(c => c.suit !== partnerSuit && c.rank === 'A');
 
-      // Nuova logica: se partner punta 80, rilancio con J o 9 del suo seme
-      if (partnerPoints === 80 && hasJackOrNine) {
-        const newPoints = partnerPoints + 10;
-        if (newPoints <= 160) {
-          this.hasRaisedOnPartner = true;
-          return {
-            type: 'bid',
-            suit: partnerSuit,
-            points: newPoints
-          };
+      // LINGUAGGIO 80: Partner ha J O 9 (manca uno dei due)
+      // Rispondo +10 SOLO se ho la carta mancante
+      if (partnerPoints === 80) {
+        // Se ho sia J che 9, partner ha dichiarato male (ha entrambi doveva dire 90+)
+        // Ma supporto comunque
+        if (hasJack && hasNine) {
+          const newPoints = partnerPoints + 10;
+          if (newPoints <= 160) {
+            this.hasRaisedOnPartner = true;
+            return { type: 'bid', suit: partnerSuit, points: newPoints };
+          }
         }
+        // Se ho J o 9 (ma non entrambi), supporto - partner ha l'altro
+        else if (hasJack || hasNine) {
+          const newPoints = partnerPoints + 10;
+          if (newPoints <= 160) {
+            this.hasRaisedOnPartner = true;
+            return { type: 'bid', suit: partnerSuit, points: newPoints };
+          }
+        }
+        // Se non ho né J né 9, non supporto l'80 (passo o annuncio altro colore)
+        // In questo caso, passo semplicemente
       }
 
-      // Se partner punta 90+, rilancio con asso/i esterno/i
+      // LINGUAGGIO 90+: Partner ha J+9 + pli maestri
+      // Supporto con assi esterni
       if (partnerPoints >= 90 && acesOutside.length > 0) {
         const raiseAmount = acesOutside.length >= 2 ? 20 : 10;
         const newPoints = partnerPoints + raiseAmount;
@@ -121,36 +131,61 @@ class BotPlayer {
   }
 
   // CASO 3: Apertura (nessuno ha puntato)
+  // Linguaggio standardizzato Belote Contrée
   handleOpeningBid(estimate, bestSuit) {
-    // Nuova logica basata su carte specifiche
-    const hand = this.currentHand; // Dobbiamo salvare la mano corrente
+    const hand = this.currentHand;
     const suitCards = hand.filter(c => c.suit === bestSuit);
 
     const hasJack = suitCards.some(c => c.rank === 'J');
     const hasNine = suitCards.some(c => c.rank === '9');
     const acesOutside = hand.filter(c => c.suit !== bestSuit && c.rank === 'A');
+    const masterTricks = this.countMasterTricks(hand, bestSuit); // Conta assi + 10
 
-    // Regola 1: J + 9 + altra carta del seme → 90
-    if (hasJack && hasNine && suitCards.length >= 3) {
-      return { type: 'bid', suit: bestSuit, points: 90 };
+    // ANNUNCIO 110: J+9 ("34") + 2 altri atout + almeno 2 assi
+    if (hasJack && hasNine && suitCards.length >= 4 && acesOutside.length >= 2) {
+      return { type: 'bid', suit: bestSuit, points: 110 };
     }
 
-    // Regola 2: J + 9 + asso esterno → 90
-    if (hasJack && hasNine && acesOutside.length >= 1) {
-      return { type: 'bid', suit: bestSuit, points: 90 };
-    }
-
-    // Regola 3: (J o 9) + altre carte del seme + asso esterno → 80
-    if ((hasJack || hasNine) && suitCards.length >= 2 && acesOutside.length >= 1) {
-      return { type: 'bid', suit: bestSuit, points: 80 };
-    }
-
-    // Fallback alla logica precedente per mani molto forti
-    if (estimate >= 90) {
+    // ANNUNCIO 100: J+9 + 2 altri atout + 1 asso
+    if (hasJack && hasNine && suitCards.length >= 4 && acesOutside.length >= 1) {
       return { type: 'bid', suit: bestSuit, points: 100 };
     }
 
+    // ANNUNCIO 90: J+9 + almeno 1 altro atout + 1-2 pli maestri in altri colori
+    if (hasJack && hasNine && suitCards.length >= 3 && masterTricks >= 1) {
+      return { type: 'bid', suit: bestSuit, points: 90 };
+    }
+
+    // ANNUNCIO 80: (J O 9, manca uno dei due) + almeno 2 altri atout
+    // Significato: "partner, ho J o 9, se hai l'altro puoi supportare"
+    if ((hasJack || hasNine) && suitCards.length >= 3) {
+      return { type: 'bid', suit: bestSuit, points: 80 };
+    }
+
+    // Se non raggiungo le condizioni minime, passo
     return { type: 'pass' };
+  }
+
+  // Helper: conta i "pli maestri" (assi e 10 che possono prendere)
+  countMasterTricks(hand, trumpSuit) {
+    const nonTrumpCards = hand.filter(c => c.suit !== trumpSuit);
+    let count = 0;
+
+    // Conta assi (sempre maestri)
+    count += nonTrumpCards.filter(c => c.rank === 'A').length;
+
+    // Conta 10 accompagnati da A (molto probabilmente maestri)
+    const suits = ['hearts', 'diamonds', 'clubs', 'spades'].filter(s => s !== trumpSuit);
+    suits.forEach(suit => {
+      const suitCards = nonTrumpCards.filter(c => c.suit === suit);
+      const hasAce = suitCards.some(c => c.rank === 'A');
+      const hasTen = suitCards.some(c => c.rank === '10');
+      if (hasAce && hasTen) {
+        count += 0.5; // A+10 insieme valgono come 1.5 pli maestri
+      }
+    });
+
+    return count;
   }
 
   // Stima punti totali per un seme come trump

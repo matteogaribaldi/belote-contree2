@@ -56,6 +56,8 @@ export class GameComponent implements OnInit, OnDestroy {
   showWinningCard = false;
   winningCardPosition: string = '';
   showInitialHands = false;
+  timerPercentage = 100;
+  private timerInterval: any;
 
   // Animation state properties
   dealingCards = false;
@@ -106,6 +108,11 @@ this.subscriptions.push(
     if (state.gameOver) {
       this.socketService.clearGameSession();
       this.audioService.play('victory');
+    }
+
+    // Aggiorna timer quando cambia il turno
+    if (!previousState || previousState.turnStartTime !== state.turnStartTime) {
+      this.startTimer();
     }
 
     // Riproduci suono quando inizia una nuova mano
@@ -193,6 +200,9 @@ this.subscriptions.push(
 
   ngOnDestroy() {
     this.subscriptions.forEach(sub => sub.unsubscribe());
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+    }
   }
 
   isMyTurn(): boolean {
@@ -456,5 +466,48 @@ this.subscriptions.push(
   getCardAnimationState(card: any): string {
     const cardId = this.getCardId(card);
     return this.cardAnimationStates.get(cardId) || 'hand';
+  }
+
+  startTimer() {
+    // Pulisci timer precedente
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+    }
+
+    if (!this.gameState || !this.gameState.turnStartTime || !this.gameState.turnTimeoutMs) {
+      console.log('Timer non avviato - dati mancanti:', {
+        hasGameState: !!this.gameState,
+        turnStartTime: this.gameState?.turnStartTime,
+        turnTimeoutMs: this.gameState?.turnTimeoutMs
+      });
+      this.timerPercentage = 100;
+      return;
+    }
+
+    console.log('Timer avviato:', {
+      turnStartTime: this.gameState.turnStartTime,
+      turnTimeoutMs: this.gameState.turnTimeoutMs,
+      currentPlayer: this.gameState.currentPlayer
+    });
+
+    // Calcola subito il primo valore
+    const now = Date.now();
+    const elapsed = now - this.gameState.turnStartTime;
+    const remaining = Math.max(0, this.gameState.turnTimeoutMs - elapsed);
+    this.timerPercentage = (remaining / this.gameState.turnTimeoutMs) * 100;
+    console.log('Timer percentage iniziale:', this.timerPercentage);
+
+    // Aggiorna timer ogni 100ms
+    this.timerInterval = setInterval(() => {
+      const now = Date.now();
+      const elapsed = now - this.gameState.turnStartTime;
+      const remaining = Math.max(0, this.gameState.turnTimeoutMs - elapsed);
+      this.timerPercentage = (remaining / this.gameState.turnTimeoutMs) * 100;
+
+      // Ferma il timer quando scade
+      if (this.timerPercentage === 0) {
+        clearInterval(this.timerInterval);
+      }
+    }, 100);
   }
 }
