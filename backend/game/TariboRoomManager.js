@@ -530,12 +530,12 @@ class TariboRoomManager {
   }
 
   async endHand(room) {
-    // Aggiungi 10 punti per l'ultima mano
+    // Aggiungi 90 punti per la décima (ultimo trick) - Taribo
     const lastTrick = room.game.tricks[room.game.tricks.length - 1];
     if (lastTrick.winner === 'north' || lastTrick.winner === 'south') {
-      room.game.score.northSouth += 10;
+      room.game.score.northSouth += 90;
     } else {
-      room.game.score.eastWest += 10;
+      room.game.score.eastWest += 90;
     }
 
     // Aggiungi Belote/Rebelote
