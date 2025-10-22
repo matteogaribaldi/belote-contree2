@@ -162,9 +162,12 @@
 
 .contract-info {
   text-align: center;
-  padding: 15px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 193, 7, 0.2) 100%);
+  border-radius: 15px;
+  border: 3px solid #FFD700;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.1);
+  min-width: 140px;
 }
 
 .trump {
@@ -173,19 +176,30 @@
 }
 
 .trump-display {
-  font-size: 56px;
-  margin-bottom: 10px;
+  font-size: 64px;
+  margin-bottom: 8px;
   text-align: center;
   line-height: 1;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
 }
 
 .trump-display span {
   display: inline-block;
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.trump-display .sans-atout {
+  font-size: 48px;
+  font-weight: bold;
+  color: #FFD700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .contract-details {
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .red { color: #ff4444; }

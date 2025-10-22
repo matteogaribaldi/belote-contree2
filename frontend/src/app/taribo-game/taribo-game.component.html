@@ -9,13 +9,14 @@
       </div>
       <div class="contract-info" *ngIf="gameState.contract">
         <div class="trump-display">
-          <span [class]="getCardClass({suit: gameState.trump})">
+          <span *ngIf="!gameState.contract.isSans" [class]="getCardClass({suit: gameState.trump})">
             {{ getSuitSymbol(gameState.trump) }}
           </span>
+          <span *ngIf="gameState.contract.isSans" class="sans-atout">SA</span>
         </div>
         <div class="contract-details">
           <span *ngIf="gameState.contract.isSans">Sans Atout</span>
-          <span *ngIf="!gameState.contract.isSans">{{ getPositionLabel(gameState.contract.player) }}</span>
+          <span *ngIf="!gameState.contract.isSans">{{ getSuitName(gameState.trump) }}</span>
         </div>
       </div>
       <div class="team-score" [class.my-team]="isMyTeam('eastWest')">

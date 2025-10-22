@@ -267,16 +267,23 @@ class TariboRoomManager {
 
     console.log(`[Taribo] ${position} bid:`, bid, `Round: ${room.game.biddingRound}`);
 
-    if (bid.type === 'take') {
+    if (bid.type === 'take' || bid.type === 'suit' || bid.type === 'sans') {
       // Qualcuno ha preso
       room.game.takerPosition = position;
 
       if (room.game.biddingRound === 1) {
         // Ha preso la carta scoperta nel primo giro
         room.game.trump = bid.suit || room.game.faceUpCard.suit;
+        room.game.contract = { player: position, suit: room.game.trump, isSans: false };
       } else {
-        // Ha scelto un seme nel secondo giro
-        room.game.trump = bid.suit;
+        // Round 2: ha scelto un seme o sans atout
+        if (bid.type === 'sans') {
+          room.game.trump = null; // Sans atout
+          room.game.contract = { player: position, isSans: true };
+        } else {
+          room.game.trump = bid.suit;
+          room.game.contract = { player: position, suit: bid.suit, isSans: false };
+        }
       }
 
       // Completa la distribuzione: taker riceve carta scoperta + 2, altri +3
