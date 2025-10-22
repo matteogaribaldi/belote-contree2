@@ -172,6 +172,18 @@
   margin-bottom: 10px;
 }
 
+.trump-display {
+  font-size: 56px;
+  margin-bottom: 10px;
+  text-align: center;
+  line-height: 1;
+}
+
+.trump-display span {
+  display: inline-block;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
 .contract-details {
   font-size: 14px;
 }
@@ -725,6 +737,10 @@
 
   .trump {
     font-size: 18px;
+  }
+
+  .trump-display {
+    font-size: 42px;
   }
 
   .cards {

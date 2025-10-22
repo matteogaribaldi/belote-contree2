@@ -21,32 +21,31 @@ class TariboBotPlayer {
     const trumpSuit = faceUpCard.suit;
     const trumpCards = hand.filter(c => c.suit === trumpSuit);
 
-    // Conta le carte di trump e valuta la forza
-    const hasJack = trumpCards.some(c => c.rank === 'J');
-    const hasNine = trumpCards.some(c => c.rank === '9');
-    const hasAce = trumpCards.some(c => c.rank === 'A');
-    const hasTen = trumpCards.some(c => c.rank === '10');
-    const trumpCount = trumpCards.length;
+    // IMPORTANTE: Se prendiamo, avremo anche la carta scoperta!
+    // Aggiungiamo la carta scoperta alla valutazione
+    const allTrumpCards = [...trumpCards, faceUpCard];
 
-    // Valuta se prendere:
-    // - Se ho J+9 o J+A, prendo quasi sempre
-    // - Se ho almeno 3 trump con carte buone, prendo
-    // - Se ho solo 1-2 trump deboli, passo
+    // Conta le carte di trump e valuta la forza (INCLUDENDO la carta scoperta)
+    const hasJack = allTrumpCards.some(c => c.rank === 'J');
+    const hasNine = allTrumpCards.some(c => c.rank === '9');
+    const hasAce = allTrumpCards.some(c => c.rank === 'A');
+    const trumpCount = allTrumpCards.length;
 
-    if (hasJack && hasNine) {
-      return { type: 'take' }; // J+9 è fortissimo
+    // Conta atout "alti" (A, 10, K, Q) includendo la carta scoperta
+    const highTrumps = allTrumpCards.filter(c => ['A', '10', 'K', 'Q'].includes(c.rank));
+
+    // REGOLA TARIBO: Prendi se (includendo la carta scoperta) avrai almeno 3 atout di cui:
+    // - J + 2 atout alti (A, 10, K, Q)
+    // - OPPURE 9 + A + un altro atout
+
+    // Caso 1: J + almeno 2 atout alti
+    if (hasJack && trumpCount >= 3 && highTrumps.length >= 2) {
+      return { type: 'take' };
     }
 
-    if (hasJack && trumpCount >= 2) {
-      return { type: 'take' }; // J con supporto
-    }
-
-    if (trumpCount >= 4 && (hasNine || hasAce)) {
-      return { type: 'take' }; // Molti trump con carta forte
-    }
-
-    if (trumpCount >= 3 && hasJack) {
-      return { type: 'take' }; // 3+ trump con J
+    // Caso 2: 9 + A + almeno un altro atout
+    if (hasNine && hasAce && trumpCount >= 3) {
+      return { type: 'take' };
     }
 
     // Altrimenti passa
@@ -54,7 +53,7 @@ class TariboBotPlayer {
   }
 
   evaluateSecondRound(hand, faceUpCard) {
-    // Trova il miglior seme alternativo
+    // Trova il miglior seme alternativo (escludendo quello della carta scoperta)
     const excludedSuit = faceUpCard.suit;
     const bestSuit = this.findBestSuitExcluding(hand, excludedSuit);
 
@@ -62,17 +61,38 @@ class TariboBotPlayer {
       return { type: 'pass' };
     }
 
-    const estimate = this.estimatePoints(hand, bestSuit.suit);
+    // Usa stessa logica della Contrée per bid a 80:
+    // (J O 9, ma non entrambi) + almeno 3 atout totali
+    const suitCards = hand.filter(c => c.suit === bestSuit.suit);
+    const hasJack = suitCards.some(c => c.rank === 'J');
+    const hasNine = suitCards.some(c => c.rank === '9');
+    const trumpCount = suitCards.length;
 
-    // Soglia più alta per il secondo giro (devo essere più forte)
-    if (estimate >= 70 && bestSuit.count >= 3) {
+    // REGOLA SPECIALE: Se ha J+9 dello stesso seme, rischia con 50% di probabilità
+    if (hasJack && hasNine && trumpCount >= 3) {
+      const shouldRisk = Math.random() < 0.5;
+      if (shouldRisk) {
+        // Controlla se dichiarare sans atout
+        const sansEstimate = this.estimateSansAtout(hand);
+        if (sansEstimate >= 80) {
+          return { type: 'sans' };
+        }
+
+        return { type: 'suit', suit: bestSuit.suit };
+      }
+      // Altrimenti passa (50% delle volte)
+      return { type: 'pass' };
+    }
+
+    // Deve avere J oppure 9 (non entrambi) e almeno 3 atout
+    if ((hasJack || hasNine) && trumpCount >= 3) {
       // Controlla se dichiarare sans atout
       const sansEstimate = this.estimateSansAtout(hand);
       if (sansEstimate >= 80) {
-        return { type: 'take', suit: 'sans' };
+        return { type: 'sans' };
       }
 
-      return { type: 'take', suit: bestSuit.suit };
+      return { type: 'suit', suit: bestSuit.suit };
     }
 
     return { type: 'pass' };

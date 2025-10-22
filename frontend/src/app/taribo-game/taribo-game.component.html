@@ -8,9 +8,9 @@
         <small class="hand-score" *ngIf="!gameState.biddingPhase">(Mano: {{ gameState.score.northSouth }})</small>
       </div>
       <div class="contract-info" *ngIf="gameState.contract">
-        <div class="trump">
-          Atout: <span [class]="getCardClass({suit: gameState.trump})">
-            {{ getSuitSymbol(gameState.trump) }} {{ getSuitName(gameState.trump) }}
+        <div class="trump-display">
+          <span [class]="getCardClass({suit: gameState.trump})">
+            {{ getSuitSymbol(gameState.trump) }}
           </span>
         </div>
         <div class="contract-details">
