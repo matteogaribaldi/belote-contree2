@@ -530,12 +530,12 @@ class TariboRoomManager {
   }
 
   async endHand(room) {
-    // Aggiungi 90 punti per la décima (ultimo trick) - Taribo
+    // Aggiungi 10 punti per la décima (ultimo trick)
     const lastTrick = room.game.tricks[room.game.tricks.length - 1];
     if (lastTrick.winner === 'north' || lastTrick.winner === 'south') {
-      room.game.score.northSouth += 90;
+      room.game.score.northSouth += 10;
     } else {
-      room.game.score.eastWest += 90;
+      room.game.score.eastWest += 10;
     }
 
     // Aggiungi Belote/Rebelote
@@ -561,9 +561,9 @@ class TariboRoomManager {
       const otherTeam = takerTeam === 'northSouth' ? 'eastWest' : 'northSouth';
       finalScore[otherTeam] = room.game.score[otherTeam];
     } else {
-      // Taker ha perso: avversari prendono 252
+      // Taker ha perso: avversari prendono 172 (162 + 10 décima)
       const otherTeam = takerTeam === 'northSouth' ? 'eastWest' : 'northSouth';
-      finalScore[otherTeam] = 252;
+      finalScore[otherTeam] = 172;
 
       // Belote rimane alla squadra che l'ha fatta
       if (room.game.beloteRebelote && room.game.beloteRebelote.announced) {
