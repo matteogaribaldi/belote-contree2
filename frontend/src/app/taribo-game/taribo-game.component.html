@@ -14,14 +14,8 @@
           </span>
         </div>
         <div class="contract-details">
-          <span *ngIf="gameState.contract.bid.type === 'cappotto'">
-            Contratto: Cappotto (250 punti)
-          </span>
-          <span *ngIf="gameState.contract.bid.type !== 'cappotto'">
-            Contratto: {{ gameState.contract.bid.points }} punti
-          </span>
-          <br>
-          <small>{{ getPositionLabel(gameState.contract.player) }}</small>
+          <span *ngIf="gameState.contract.isSans">Sans Atout</span>
+          <span *ngIf="!gameState.contract.isSans">{{ getPositionLabel(gameState.contract.player) }}</span>
         </div>
       </div>
       <div class="team-score" [class.my-team]="isMyTeam('eastWest')">
@@ -47,10 +41,23 @@
     </div>
   </div>
 
-  <!-- Fase di puntata -->
-  <div class="bidding-phase" *ngIf="gameState.biddingPhase">
-    <h2>Fase di Puntata</h2>
-    
+  <!-- Fase di puntata - Round 1: Prendi/Passo -->
+  <div class="bidding-phase" *ngIf="isRound1Bidding()">
+    <h2>Fase di Puntata - Round 1</h2>
+
+    <!-- Face-up card display -->
+    <div class="face-up-card-container" *ngIf="gameState.faceUpCard">
+      <h3>Carta Scoperta</h3>
+      <div class="face-up-card">
+        <div class="card"
+             [class.red]="gameState.faceUpCard.suit === 'hearts' || gameState.faceUpCard.suit === 'diamonds'"
+             [class.black]="gameState.faceUpCard.suit === 'clubs' || gameState.faceUpCard.suit === 'spades'">
+          <div class="card-rank">{{ gameState.faceUpCard.rank }}</div>
+          <div class="card-suit">{{ getSuitSymbol(gameState.faceUpCard.suit) }}</div>
+        </div>
+      </div>
+    </div>
+
     <div class="bids-history" *ngIf="gameState.bids.length > 0">
       <h3>Puntate:</h3>
       <div class="bid-list">
@@ -60,80 +67,21 @@
             {{ getPositionLabel(bidEntry.player) }}:
           </strong>
           <span *ngIf="bidEntry.bid.type === 'pass'">Passo</span>
-          <span *ngIf="bidEntry.bid.type === 'bid'">
-            {{ bidEntry.bid.points }} -
-            <span [class]="getCardClass({suit: bidEntry.bid.suit})">
-              {{ getSuitSymbol(bidEntry.bid.suit) }}
-            </span>
-          </span>
-          <span *ngIf="bidEntry.bid.type === 'cappotto'" class="cappotto-badge">Cappotto (500)</span>
-          <span *ngIf="bidEntry.bid.type === 'contro'" class="contro-badge">Contro</span>
-          <span *ngIf="bidEntry.bid.type === 'surcontre'" class="surcontre-badge">Surcontre</span>
+          <span *ngIf="bidEntry.bid.type === 'take'">Prendi</span>
         </div>
       </div>
     </div>
 
     <div class="bidding-actions" *ngIf="isMyTurn()">
       <h3>È il tuo turno!</h3>
-
-      <div *ngIf="!selectedBid" class="suit-selection">
-        <button
-          *ngFor="let suit of ['hearts', 'diamonds', 'clubs', 'spades']"
-          class="btn-suit"
-          [class]="getCardClass({suit: suit})"
-          (click)="selectBidSuit(suit)"
-        >
-          {{ getSuitSymbol(suit) }} {{ getSuitName(suit) }}
+      <div class="round1-buttons">
+        <button class="btn-take" (click)="placeBid('take')">
+          Prendi
+        </button>
+        <button class="btn-pass" (click)="placeBid('pass')">
+          Passo
         </button>
       </div>
-
-      <div *ngIf="selectedBid" class="points-selection">
-        <h4>
-          Seme selezionato:
-          <span [class]="getCardClass({suit: selectedBid.suit})">
-            {{ getSuitSymbol(selectedBid.suit) }}
-          </span>
-        </h4>
-        <div class="points-grid">
-          <button
-            *ngFor="let points of bidPoints"
-            class="btn-points"
-            [disabled]="!canBidPoints(points)"
-            (click)="placeBid('bid', selectedBid.suit, points)"
-          >
-            {{ points }}
-          </button>
-        </div>
-        <button class="btn-back" (click)="selectedBid = null">Indietro</button>
-      </div>
-
-      <div class="special-bids">
-        <button
-          class="btn-cappotto"
-          *ngIf="canCappotto()"
-          (click)="placeCappotto()"
-        >
-          Cappotto (500)
-        </button>
-        <button
-          class="btn-contro"
-          *ngIf="canContro()"
-          (click)="placeContro()"
-        >
-          Contro
-        </button>
-        <button
-          class="btn-surcontre"
-          *ngIf="canSurcontre()"
-          (click)="placeSurcontre()"
-        >
-          Surcontre
-        </button>
-      </div>
-
-      <button class="btn-pass" (click)="placeBid('pass')">
-        Passo
-      </button>
     </div>
 
     <div class="waiting-bid" *ngIf="!isMyTurn()">
@@ -145,6 +93,7 @@
       </p>
       <div class="loader"></div>
     </div>
+
     <div class="player-hand-bidding">
       <h3>Le tue carte</h3>
       <div class="cards">
@@ -161,9 +110,100 @@
     </div>
   </div>
 
-  <!-- CONTINUA NELLA PARTE 2... -->
-   <!-- Fase di gioco -->
+  <!-- Fase di puntata - Round 2: Scelta seme o Sans -->
+  <div class="bidding-phase" *ngIf="isRound2Bidding()">
+    <h2>Fase di Puntata - Round 2</h2>
+
+    <!-- Face-up card display -->
+    <div class="face-up-card-container" *ngIf="gameState.faceUpCard">
+      <h3>Carta Scoperta</h3>
+      <div class="face-up-card">
+        <div class="card"
+             [class.red]="gameState.faceUpCard.suit === 'hearts' || gameState.faceUpCard.suit === 'diamonds'"
+             [class.black]="gameState.faceUpCard.suit === 'clubs' || gameState.faceUpCard.suit === 'spades'">
+          <div class="card-rank">{{ gameState.faceUpCard.rank }}</div>
+          <div class="card-suit">{{ getSuitSymbol(gameState.faceUpCard.suit) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bids-history" *ngIf="gameState.bids.length > 0">
+      <h3>Puntate:</h3>
+      <div class="bid-list">
+        <div class="bid-item" *ngFor="let bidEntry of gameState.bids">
+          <strong [class.team-ns]="bidEntry.player === 'north' || bidEntry.player === 'south'"
+                  [class.team-ew]="bidEntry.player === 'east' || bidEntry.player === 'west'">
+            {{ getPositionLabel(bidEntry.player) }}:
+          </strong>
+          <span *ngIf="bidEntry.bid.action === 'pass'">Passo</span>
+          <span *ngIf="bidEntry.bid.action === 'take'">Prendi</span>
+          <span *ngIf="bidEntry.bid.action === 'suit'">
+            <span [class]="getCardClass({suit: bidEntry.bid.suit})">
+              {{ getSuitSymbol(bidEntry.bid.suit) }}
+            </span>
+          </span>
+          <span *ngIf="bidEntry.bid.action === 'sans'">Sans Atout</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bidding-actions" *ngIf="isMyTurn()">
+      <h3>È il tuo turno! Scegli il seme</h3>
+
+      <div class="suit-selection">
+        <button
+          *ngFor="let suit of ['hearts', 'diamonds', 'clubs', 'spades']"
+          class="btn-suit"
+          [class]="getCardClass({suit: suit})"
+          (click)="placeBid('suit', suit)"
+        >
+          {{ getSuitSymbol(suit) }} {{ getSuitName(suit) }}
+        </button>
+      </div>
+
+      <button class="btn-sans" (click)="placeBid('sans')">
+        Sans Atout
+      </button>
+
+      <button class="btn-pass" (click)="placeBid('pass')">
+        Passo
+      </button>
+    </div>
+
+    <div class="waiting-bid" *ngIf="!isMyTurn()">
+      <p>Turno di:
+        <strong [class.team-ns]="gameState.currentPlayer === 'north' || gameState.currentPlayer === 'south'"
+                [class.team-ew]="gameState.currentPlayer === 'east' || gameState.currentPlayer === 'west'">
+          {{ getPositionLabel(gameState.currentPlayer) }}
+        </strong>
+      </p>
+      <div class="loader"></div>
+    </div>
+
+    <div class="player-hand-bidding">
+      <h3>Le tue carte</h3>
+      <div class="cards">
+        <div
+          *ngFor="let card of gameState.hand; let i = index"
+          class="card"
+          [class.red]="card.suit === 'hearts' || card.suit === 'diamonds'"
+          [class.black]="card.suit === 'clubs' || card.suit === 'spades'"
+        >
+          <div class="card-rank">{{ card.rank }}</div>
+          <div class="card-suit">{{ getSuitSymbol(card.suit) }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fase di gioco -->
   <div class="playing-phase" *ngIf="!gameState.biddingPhase">
+    <!-- Declarations display after first trick -->
+    <div class="declarations-banner" *ngIf="shouldShowDeclarations()">
+      <h3>Dichiarazioni</h3>
+      <p>{{ getDeclarationsText() }}</p>
+    </div>
+
     <!-- Tavolo di gioco -->
     <div class="game-table">
       <!-- Trick corrente -->
@@ -177,9 +217,28 @@
           <div
             class="speech-bubble"
             *ngIf="shouldShowSpeechBubble(position)"
+            [class.with-image]="gameState.lastSpeechBubble?.isJackOfTrump || gameState.lastSpeechBubble?.isNineOfTrump"
             [class.belote-bubble]="gameState.lastSpeechBubble?.isBelote || gameState.lastSpeechBubble?.isRebelote"
           >
-            {{ gameState.lastSpeechBubble?.message }}
+            <picture *ngIf="gameState.lastSpeechBubble?.isJackOfTrump">
+              <source srcset="assets/Subject.webp" type="image/webp">
+              <img
+                src="assets/Subject.png"
+                alt="Jack of Trump"
+                class="subject-img-bubble"
+              >
+            </picture>
+            <picture *ngIf="gameState.lastSpeechBubble?.isNineOfTrump">
+              <source srcset="assets/lory.webp" type="image/webp">
+              <img
+                src="assets/lory.png"
+                alt="Nine of Trump"
+                class="subject-img-bubble"
+              >
+            </picture>
+            <span *ngIf="!gameState.lastSpeechBubble?.isJackOfTrump && !gameState.lastSpeechBubble?.isNineOfTrump">
+              {{ gameState.lastSpeechBubble?.message }}
+            </span>
           </div>
         </div>
 
@@ -307,7 +366,7 @@
     </div>
   </div>
 
-  <!-- Fine partita - Vittoria a 701 -->
+  <!-- Fine partita - Vittoria -->
   <div class="game-over" *ngIf="gameState.gameOver">
     <div class="victory-card">
       <h1>🎉 Partita Terminata! 🎉</h1>
@@ -337,7 +396,10 @@
         <div class="history-list">
           <div class="history-item" *ngFor="let hand of gameState.handHistory">
             <span class="hand-number">Mano {{ hand.handNumber }}</span>
-            <span class="hand-contract">{{ hand.contract.bid.points }} {{ getSuitSymbol(hand.contract.bid.suit) }}</span>
+            <span class="hand-contract">
+              <span *ngIf="hand.contract.isSans">Sans</span>
+              <span *ngIf="!hand.contract.isSans">{{ getSuitSymbol(hand.contract.suit) }}</span>
+            </span>
             <span class="hand-scores">{{ hand.finalScore.northSouth }} - {{ hand.finalScore.eastWest }}</span>
           </div>
         </div>
@@ -348,6 +410,7 @@
       </button>
     </div>
   </div>
+
   <!-- Winner announcement -->
   <div class="winner-announcement" *ngIf="showWinnerAnnouncement">
     <div class="winner-name">{{ getPositionLabel(gameState.lastTrick?.winner) }}</div>

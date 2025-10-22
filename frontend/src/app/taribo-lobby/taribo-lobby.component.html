@@ -5,6 +5,10 @@
     <span class="notification-text">{{ errorMessage }}</span>
   </div>
 
+  <button class="back-btn-fixed" (click)="goBack()" title="Torna alla Home">
+    <span>←</span>
+  </button>
+
   <button class="info-btn-fixed" (click)="showInfo()" title="Informazioni">
     <span>ℹ</span>
   </button>
@@ -13,16 +17,10 @@
     <span>📊</span>
   </button>
 
-  <button class="taribo-btn-fixed" routerLink="/taribo" title="Gioca a Taribo (Belote Classica)">
-    <span>🃏</span>
-  </button>
-
   <div class="lobby-card">
-    <div class="champions-logo">
-      <picture>
-        <source srcset="assets/champions.webp" type="image/webp">
-        <img src="assets/champions.png" alt="Champions" class="champions-img">
-      </picture>
+    <div class="mode-header">
+      <h1>🎴 Belote Classica</h1>
+      <p class="mode-subtitle">Taribo - Regole Francesi</p>
     </div>
 
     <div class="input-group">
@@ -72,7 +70,7 @@
   <div class="modal-overlay" *ngIf="showStatsModal" (click)="closeStats()">
     <div class="modal-content stats-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>📊 Statistiche Partite</h2>
+        <h2>📊 Statistiche Taribo</h2>
         <button class="close-btn" (click)="closeStats()">✕</button>
       </div>
 

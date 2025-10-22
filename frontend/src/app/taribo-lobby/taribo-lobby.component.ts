@@ -1,18 +1,18 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { SocketService } from '../services/socket.service';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
 @Component({
-  selector: 'app-lobby',
+  selector: 'app-taribo-lobby',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
-  templateUrl: './lobby.component.html',
-  styleUrls: ['./lobby.component.css'],
+  imports: [CommonModule, FormsModule],
+  templateUrl: './taribo-lobby.component.html',
+  styleUrls: ['./taribo-lobby.component.css'],
   animations: [
     trigger('fadeInOut', [
       transition(':enter', [
@@ -25,7 +25,7 @@ import { environment } from '../../environments/environment';
     ])
   ]
 })
-export class LobbyComponent implements OnInit {
+export class TariboLobbyComponent implements OnInit {
   playerName = '';
   roomCode = '';
   showJoinForm = false;
@@ -48,13 +48,13 @@ export class LobbyComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.socketService.onRoomCreated().subscribe(data => {
+    this.socketService.onTariboRoomCreated().subscribe(data => {
       this.isCreatingRoom = false;
-      this.router.navigate(['/waiting', data.roomCode]);
+      this.router.navigate(['/taribo/waiting', data.roomCode]);
     });
 
-    this.socketService.onRoomJoined().subscribe(data => {
-      this.router.navigate(['/waiting', data.roomCode]);
+    this.socketService.onTariboRoomJoined().subscribe(data => {
+      this.router.navigate(['/taribo/waiting', data.roomCode]);
     });
 
     this.socketService.onError().subscribe(error => {
@@ -62,18 +62,18 @@ export class LobbyComponent implements OnInit {
       this.showError(error.message);
     });
 
-    this.socketService.onActiveRoomsList().subscribe(rooms => {
+    this.socketService.onTariboActiveRoomsList().subscribe(rooms => {
       this.activeRooms = rooms;
     });
 
-    this.socketService.getActiveRooms();
+    this.socketService.getTariboActiveRooms();
   }
 
   createRoom() {
     if (this.playerName.trim()) {
       this.isCreatingRoom = true;
       localStorage.setItem('belote_playerName', this.playerName.trim());
-      this.socketService.createRoom(this.playerName.trim());
+      this.socketService.createTariboRoom(this.playerName.trim());
     } else {
       this.showError('Inserisci il tuo nome prima di creare una partita');
     }
@@ -84,11 +84,11 @@ export class LobbyComponent implements OnInit {
       localStorage.setItem('belote_playerName', this.playerName.trim());
       // Se c'è una stanza disponibile, entra automaticamente in quella
       if (this.activeRooms.length > 0) {
-        this.socketService.joinRoom(this.activeRooms[0].code, this.playerName.trim());
+        this.socketService.joinTariboRoom(this.activeRooms[0].code, this.playerName.trim());
       } else {
         // Altrimenti usa il roomCode manuale se fornito
         if (this.roomCode.trim()) {
-          this.socketService.joinRoom(this.roomCode.trim().toUpperCase(), this.playerName.trim());
+          this.socketService.joinTariboRoom(this.roomCode.trim().toUpperCase(), this.playerName.trim());
         } else {
           this.showError('Nessuna stanza disponibile');
         }
@@ -106,7 +106,7 @@ export class LobbyComponent implements OnInit {
   joinActiveRoom(roomCode: string) {
     if (this.playerName.trim()) {
       localStorage.setItem('belote_playerName', this.playerName.trim());
-      this.socketService.joinRoom(roomCode, this.playerName.trim());
+      this.socketService.joinTariboRoom(roomCode, this.playerName.trim());
     } else {
       this.showError('Inserisci il tuo nome prima di unirti a una partita');
     }
@@ -120,7 +120,7 @@ export class LobbyComponent implements OnInit {
   }
 
   showInfo() {
-    alert(`🎴 COME GIOCARE A BELOTTA
+    alert(`🎴 COME GIOCARE A BELOTTA TARIBO (Belote Classica)
 
 📝 CREAZIONE PARTITA:
 1. Inserisci il tuo nome
@@ -145,10 +145,13 @@ export class LobbyComponent implements OnInit {
 • Riapri la pagina e verrai automaticamente riconnesso
 • Il gioco continua con un bot temporaneo durante la disconnessione
 
-🃏 REGOLE DEL GIOCO:
-Le regole seguono la tradizione della Belotte Bridgè come si gioca a San Lorenzo al Mare (IM).
-Leggenda narra che il gioco si chiamasse "Belotte Bridgè", ma è probabilmente la variante nota come Belote Contrée.
-Obiettivo: raggiungere 701 punti prima degli avversari.
+🃏 REGOLE TARIBO (Belote Classica):
+Belote Classica con regole francesi standard.
+Differenze rispetto alla Contrée:
+• Carta scoperta durante le puntate
+• Puntate in due turni: Prendi/Passa, poi scelta seme/sans
+• Dichiarazioni (tierce, cinquante, carré) dopo il primo trick
+Obiettivo: raggiungere 501 punti prima degli avversari.
 
 Buon divertimento! 🎉`);
   }
@@ -158,7 +161,7 @@ Buon divertimento! 🎉`);
     this.loadingHistory = true;
 
     const backendUrl = environment.socketUrl.replace(/\/$/, '');
-    this.http.get<any>(`${backendUrl}/api/game-history?limit=50`).subscribe({
+    this.http.get<any>(`${backendUrl}/api/taribo-game-history?limit=50`).subscribe({
       next: (data) => {
         this.gameHistory = data;
         this.loadingHistory = false;
@@ -182,7 +185,7 @@ Buon divertimento! 🎉`);
     const backendUrl = environment.socketUrl.replace(/\/$/, '');
 
     // Carica statistiche giocatori
-    this.http.get<any>(`${backendUrl}/api/player-stats`).subscribe({
+    this.http.get<any>(`${backendUrl}/api/taribo-player-stats`).subscribe({
       next: (data) => {
         this.playerStats = data.players || [];
       },
@@ -192,7 +195,7 @@ Buon divertimento! 🎉`);
     });
 
     // Carica lista partite
-    this.http.get<any>(`${backendUrl}/api/games-list?limit=20`).subscribe({
+    this.http.get<any>(`${backendUrl}/api/taribo-games-list?limit=20`).subscribe({
       next: (data) => {
         this.gamesList = data.games || [];
         this.loadingStats = false;
@@ -234,5 +237,9 @@ Buon divertimento! 🎉`);
   getFormattedDate(dateString: string): string {
     const date = new Date(dateString);
     return this.formatDate(date.getTime());
+  }
+
+  goBack() {
+    this.router.navigate(['/']);
   }
 }

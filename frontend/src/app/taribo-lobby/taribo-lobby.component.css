@@ -91,31 +91,48 @@
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
-.taribo-btn-fixed {
+.back-btn-fixed {
   position: fixed;
-  bottom: 20px;
+  top: 20px;
   left: 20px;
-  background: rgba(255, 152, 0, 0.8);
-  border: 2px solid rgba(255, 152, 0, 0.9);
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
   padding: 0;
+  color: white;
   font-size: 24px;
+  font-weight: bold;
   z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.taribo-btn-fixed:hover {
-  background: rgba(255, 152, 0, 1);
-  border-color: rgba(255, 152, 0, 1);
+.back-btn-fixed:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
   transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.mode-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.mode-header h1 {
+  font-size: 32px;
+  margin-bottom: 10px;
+  color: white;
+}
+
+.mode-subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
 }
 
 .history-btn-fixed {

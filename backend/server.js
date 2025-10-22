@@ -3,6 +3,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const RoomManager = require('./game/RoomManager');
+const TariboRoomManager = require('./game/TariboRoomManager');
 const { getRecentGames, getTotalGames } = require('./game/database');
 const { initializeDatabase, getGameStats, getPlayerStats, getGamesList } = require('./database/db');
 
@@ -24,6 +25,7 @@ const io = socketIo(server, {
 });
 
 const roomManager = new RoomManager(io);
+const tariboRoomManager = new TariboRoomManager(io);
 
 io.on('connection', (socket) => {
   console.log('Nuovo client connesso:', socket.id);
@@ -81,9 +83,64 @@ io.on('connection', (socket) => {
     roomManager.reconnectPlayer(socket, roomCode, playerName);
   });
 
+  // Taribo events (prefissati con 'taribo:')
+  socket.on('taribo:createRoom', (playerName) => {
+    tariboRoomManager.createRoom(socket, playerName);
+  });
+
+  socket.on('taribo:joinRoom', ({ roomCode, playerName }) => {
+    tariboRoomManager.joinRoom(socket, roomCode, playerName);
+  });
+
+  socket.on('taribo:choosePosition', ({ roomCode, position }) => {
+    tariboRoomManager.choosePosition(socket, roomCode, position);
+  });
+
+  socket.on('taribo:toggleBot', ({ roomCode, position }) => {
+    tariboRoomManager.toggleBot(socket, roomCode, position);
+  });
+
+  socket.on('taribo:startGame', (roomCode) => {
+    tariboRoomManager.startGame(socket, roomCode);
+  });
+
+  socket.on('taribo:placeBid', ({ roomCode, bid }) => {
+    tariboRoomManager.placeBid(socket, roomCode, bid);
+  });
+
+  socket.on('taribo:playCard', ({ roomCode, card }) => {
+    tariboRoomManager.playCard(socket, roomCode, card);
+  });
+
+  socket.on('taribo:confirmTrick', (roomCode) => {
+    tariboRoomManager.confirmTrick(socket, roomCode);
+  });
+
+  socket.on('taribo:nextHand', (roomCode) => {
+    tariboRoomManager.nextHand(socket, roomCode);
+  });
+
+  socket.on('taribo:getActiveRooms', () => {
+    const activeRooms = tariboRoomManager.getActiveRooms();
+    socket.emit('taribo:activeRoomsList', activeRooms);
+  });
+
+  socket.on('taribo:deleteRoom', (roomCode) => {
+    tariboRoomManager.deleteRoom(socket, roomCode);
+  });
+
+  socket.on('taribo:setTargetScore', ({ roomCode, targetScore }) => {
+    tariboRoomManager.setTargetScore(socket, roomCode, targetScore);
+  });
+
+  socket.on('taribo:reconnect', ({ roomCode, playerName }) => {
+    tariboRoomManager.reconnectPlayer(socket, roomCode, playerName);
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnesso:', socket.id);
     roomManager.handleDisconnect(socket);
+    tariboRoomManager.handleDisconnect(socket);
   });
 });
 

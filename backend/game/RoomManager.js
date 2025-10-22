@@ -519,8 +519,6 @@ playCard(socket, roomCode, card, botPosition = null) {
         position,
         message: isBelote ? 'Belote!' : 'Rebelote!',
         timestamp: Date.now(),
-        isJackOfTrump: false,
-        isNineOfTrump: false,
         isBelote,
         isRebelote
       };
@@ -528,14 +526,10 @@ playCard(socket, roomCode, card, botPosition = null) {
       // Genera fumetto normale (60% probabilità)
       const speechBubble = this.generateSpeechBubble(card, room.game.currentTrick, room.game.trump);
       if (speechBubble) {
-        const isJackOfTrump = card.rank === 'J' && card.suit === room.game.trump;
-        const isNineOfTrump = card.rank === '9' && card.suit === room.game.trump;
         room.game.lastSpeechBubble = {
           position,
           message: speechBubble,
-          timestamp: Date.now(),
-          isJackOfTrump,
-          isNineOfTrump
+          timestamp: Date.now()
         };
       }
     }
@@ -792,12 +786,9 @@ completeTrick(room) {
 
   generateSpeechBubble(card, currentTrick, trump) {
     const isTrump = card.suit === trump;
-    const isJackOfTrump = card.rank === 'J' && isTrump;
-    const isNineOfTrump = card.rank === '9' && isTrump;
 
-    // Mostra sempre il fumetto per Jack e 9 di atout
-    // Altrimenti 60% probabilità di mostrare un fumetto
-    if (!isJackOfTrump && !isNineOfTrump && Math.random() > 0.6) return null;
+    // 60% probabilità di mostrare un fumetto
+    if (Math.random() > 0.6) return null;
 
     const leadCard = currentTrick[Object.keys(currentTrick)[0]];
     const isFirstCard = Object.keys(currentTrick).length === 0;
