@@ -343,7 +343,7 @@
   border-radius: 50% / 20%;
   padding: 40px;
   margin-bottom: 30px;
-  min-height: 400px;
+  min-height: 500px;
   position: relative;
   box-shadow:
     inset 0 0 50px rgba(0, 0, 0, 0.3),
@@ -354,7 +354,7 @@
 .trick-area {
   position: relative;
   width: 100%;
-  height: 300px;
+  height: 400px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -670,11 +670,11 @@
 
   .game-table {
     padding: 30px;
-    min-height: 350px;
+    min-height: 450px;
   }
 
   .trick-area {
-    height: 280px;
+    height: 360px;
   }
 }
 
@@ -682,11 +682,11 @@
 @media (max-width: 768px) {
   .game-table {
     padding: 20px;
-    min-height: 300px;
+    min-height: 380px;
   }
 
   .trick-area {
-    height: 250px;
+    height: 300px;
   }
 
   .card {
@@ -773,11 +773,11 @@
 
   .game-table {
     padding: 15px;
-    min-height: 250px;
+    min-height: 320px;
   }
 
   .trick-area {
-    height: 200px;
+    height: 250px;
   }
 }
 
