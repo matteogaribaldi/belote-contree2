@@ -510,4 +510,23 @@ this.subscriptions.push(
       }
     }, 100);
   }
+
+  declareBelote() {
+    if (this.gameState.biddingPhase) return;
+
+    // Controlla se il giocatore ha K e Q di atout in mano
+    const trump = this.gameState.trump;
+    const hasKing = this.gameState.hand.some((c: any) => c.suit === trump && c.rank === 'K');
+    const hasQueen = this.gameState.hand.some((c: any) => c.suit === trump && c.rank === 'Q');
+
+    if (hasKing && hasQueen) {
+      // Dichiara Belote
+      this.socketService.declareBelote(this.roomCode);
+    } else {
+      // Mostra messaggio di sfida
+      const messages = ['Dove vai?', 'Pollo!', 'Ti piacerebbe!'];
+      const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+      alert(randomMessage);
+    }
+  }
 }

@@ -742,6 +742,44 @@ completeTrick(room) {
     this.initializeGame(room, true);
   }
 
+  declareBelote(socket, roomCode) {
+    const room = this.rooms.get(roomCode);
+    if (!room || room.state !== 'playing') return;
+
+    const playerPosition = this.getPlayerPosition(room, socket.id);
+    if (!playerPosition) return;
+
+    const trump = room.game.trump;
+    const hand = room.game.hands[playerPosition];
+
+    // Verifica se il giocatore ha K e Q di atout
+    const hasKing = hand.some(c => c.suit === trump && c.rank === 'K');
+    const hasQueen = hand.some(c => c.suit === trump && c.rank === 'Q');
+
+    if (hasKing && hasQueen) {
+      // Dichiara la Belote
+      room.game.beloteRebelote = {
+        player: playerPosition,
+        announced: true,
+        timestamp: Date.now()
+      };
+
+      // Broadcast messaggio visibile a tutti
+      const playerName = room.playerNames[socket.id] || playerPosition;
+      room.game.lastSpeechBubble = {
+        position: playerPosition,
+        message: `Belote dichiarata!`,
+        isBelote: true,
+        timestamp: Date.now()
+      };
+
+      this.broadcastGameState(room.code);
+    } else {
+      // Invia messaggio di errore solo al giocatore
+      socket.emit('error', { message: 'Non hai K e Q di atout!' });
+    }
+  }
+
  botBid(room, position) {
   console.log(`botBid chiamato per posizione: ${position}`);
 

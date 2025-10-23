@@ -243,6 +243,12 @@
           <div class="card-suit">{{ getSuitSymbol(card.suit) }}</div>
         </div>
       </div>
+
+      <!-- Bottone dichiarazione Belote -->
+      <button class="btn-belote" (click)="declareBelote()" *ngIf="!gameState.biddingPhase">
+        Dichiara Belote
+      </button>
+
       <p class="turn-indicator" *ngIf="isMyTurn()">✨ È il tuo turno! Gioca una carta.</p>
       <p class="turn-indicator" *ngIf="!isMyTurn()">
         Turno di: <strong>{{ getPositionLabel(gameState.currentPlayer) }}</strong>

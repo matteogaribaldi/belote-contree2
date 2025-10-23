@@ -59,6 +59,10 @@ export class SocketService {
     this.socket.emit('nextHand', roomCode);
   }
 
+  declareBelote(roomCode: string) {
+    this.socket.emit('declareBelote', { roomCode });
+  }
+
   getActiveRooms() {
     this.socket.emit('getActiveRooms');
   }

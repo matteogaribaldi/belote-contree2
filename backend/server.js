@@ -67,6 +67,10 @@ io.on('connection', (socket) => {
     roomManager.nextHand(socket, roomCode);
   });
 
+  socket.on('declareBelote', ({ roomCode }) => {
+    roomManager.declareBelote(socket, roomCode);
+  });
+
   socket.on('deleteRoom', (roomCode) => {
     roomManager.deleteRoom(socket, roomCode);
   });
