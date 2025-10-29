@@ -219,8 +219,15 @@
   gap: 5px;
 }
 
+.room-name {
+  font-size: 20px;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 5px;
+}
+
 .room-code {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: bold;
   color: #4CAF50;
 }
@@ -233,6 +240,24 @@
 .room-players {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 8px;
+}
+
+.room-player-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.player-badge {
+  background: rgba(76, 175, 80, 0.3);
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 /* Notification styles */
@@ -451,6 +476,91 @@
   font-style: italic;
 }
 
+/* Confirm Create Modal */
+.confirm-modal {
+  background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+  border-radius: 20px;
+  padding: 0;
+  max-width: 450px;
+  width: 90%;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.confirm-modal .modal-body {
+  padding: 30px;
+}
+
+.confirm-text {
+  color: white;
+  text-align: center;
+  font-size: 16px;
+  margin: 10px 0;
+  line-height: 1.5;
+}
+
+.button-group-modal {
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.btn-cancel {
+  flex: 1;
+  padding: 12px 24px;
+  border: 2px solid white;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-confirm {
+  flex: 1;
+  padding: 12px 24px;
+  border: 2px solid white;
+  border-radius: 10px;
+  background: white;
+  color: #F57C00;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-confirm:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Player Name Modal */
+.player-name-modal {
+  background: linear-gradient(135deg, #37474F 0%, #263238 100%);
+  border-radius: 20px;
+  padding: 0;
+  max-width: 400px;
+  width: 90%;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.player-name-modal .modal-body {
+  padding: 30px;
+}
+
+.full-width {
+  width: 100%;
+}
+
 /* Stats Modal */
 .modal-overlay {
   position: fixed;
@@ -463,6 +573,10 @@
   align-items: center;
   justify-content: center;
   z-index: 2000;
+}
+
+.modal-content {
+  position: relative;
 }
 
 .stats-modal {

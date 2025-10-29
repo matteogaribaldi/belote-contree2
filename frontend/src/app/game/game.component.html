@@ -57,6 +57,8 @@
         <div class="bid-item" *ngFor="let bidEntry of gameState.bids">
           <strong [class.team-ns]="bidEntry.player === 'north' || bidEntry.player === 'south'"
                   [class.team-ew]="bidEntry.player === 'east' || bidEntry.player === 'west'">
+            <span *ngIf="isDealer(bidEntry.player)" class="dealer-badge">D</span>
+            <span *ngIf="isFirstHand(bidEntry.player)" class="first-hand-badge">F</span>
             {{ getPositionLabel(bidEntry.player) }}:
           </strong>
           <span *ngIf="bidEntry.bid.type === 'pass'">Passo</span>
@@ -75,6 +77,9 @@
 
     <div class="bidding-actions" *ngIf="isMyTurn()">
       <h3>È il tuo turno!</h3>
+      <p class="first-hand-notice" *ngIf="isFirstHand(gameState.position)">
+        🎯 Sei il primo di mano!
+      </p>
 
       <div *ngIf="!selectedBid" class="suit-selection">
         <button
@@ -140,6 +145,8 @@
       <p>Turno di:
         <strong [class.team-ns]="gameState.currentPlayer === 'north' || gameState.currentPlayer === 'south'"
                 [class.team-ew]="gameState.currentPlayer === 'east' || gameState.currentPlayer === 'west'">
+          <span *ngIf="isDealer(gameState.currentPlayer)" class="dealer-badge">D</span>
+          <span *ngIf="isFirstHand(gameState.currentPlayer)" class="first-hand-badge">F</span>
           {{ getPositionLabel(gameState.currentPlayer) }}
         </strong>
       </p>

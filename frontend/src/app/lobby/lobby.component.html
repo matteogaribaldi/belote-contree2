@@ -28,17 +28,16 @@
     <div class="input-group">
       <input
         type="text"
-        [(ngModel)]="playerName"
-        placeholder="Il tuo nome"
-        maxlength="20"
-        (keyup.enter)="activeRooms.length === 0 ? createRoom() : joinRoom()"
+        [(ngModel)]="roomName"
+        placeholder="Nome del tavolo"
+        maxlength="30"
+        (keyup.enter)="createRoom()"
       />
     </div>
 
-    <!-- Se NON ci sono stanze attive, mostra solo "Crea Partita" -->
-    <div class="button-group" *ngIf="activeRooms.length === 0">
-      <button class="btn-primary" (click)="createRoom()" [disabled]="!playerName.trim() || isCreatingRoom">
-        <span *ngIf="!isCreatingRoom">Crea Partita</span>
+    <div class="button-group">
+      <button class="btn-primary" (click)="createRoom()" [disabled]="!roomName.trim() || isCreatingRoom">
+        <span *ngIf="!isCreatingRoom">Crea Tavolo</span>
         <span *ngIf="isCreatingRoom" class="loading-container">
           <span class="spinner"></span>
           <span>Creazione tavolo...</span>
@@ -46,23 +45,69 @@
       </button>
     </div>
 
-    <!-- Se c'è una stanza attiva, mostra solo "Unisciti a Partita" e le info della stanza -->
-    <div *ngIf="activeRooms.length > 0">
-      <div class="active-rooms">
-        <h3>Partita Disponibile</h3>
-        <div class="room-list">
-          <div class="room-item" *ngFor="let room of activeRooms">
-            <div class="room-info">
-              <span class="room-code">{{ room.code }}</span>
-              <span class="room-host">Host: {{ room.hostName }}</span>
-              <span class="room-players">{{ room.playerCount }}/4 giocatori</span>
+    <!-- Lista dei tavoli disponibili -->
+    <div *ngIf="activeRooms.length > 0" class="active-rooms">
+      <h3>Tavoli Disponibili</h3>
+      <div class="room-list">
+        <div class="room-item" *ngFor="let room of activeRooms" (click)="selectRoom(room.code)">
+          <div class="room-info">
+            <span class="room-name">{{ room.name }}</span>
+            <span class="room-code">Codice: {{ room.code }}</span>
+            <span class="room-players">{{ room.playerCount }}/4 giocatori</span>
+            <div class="room-player-names" *ngIf="room.playerNames && room.playerNames.length > 0">
+              <span class="player-badge" *ngFor="let playerName of room.playerNames">{{ playerName }}</span>
             </div>
           </div>
         </div>
       </div>
-      <div class="button-group">
-        <button class="btn-primary" (click)="joinRoom()" [disabled]="!playerName.trim()">
-          Unisciti a Partita
+    </div>
+  </div>
+
+  <!-- Modal conferma creazione tavolo -->
+  <div class="modal-overlay" *ngIf="showConfirmCreateModal" (click)="cancelCreateRoom()">
+    <div class="modal-content confirm-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>⚠️ Conferma Creazione</h2>
+        <button class="close-btn" (click)="cancelCreateRoom()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="confirm-text">Esiste già {{ activeRooms.length }} tavolo{{ activeRooms.length > 1 ? 'i' : '' }} in attesa.</p>
+        <p class="confirm-text">Sei sicuro di voler creare un nuovo tavolo?</p>
+
+        <div class="button-group-modal">
+          <button class="btn-cancel" (click)="cancelCreateRoom()">
+            Annulla
+          </button>
+          <button class="btn-confirm" (click)="confirmCreateRoom()">
+            Crea Comunque
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal per inserire nome giocatore -->
+  <div class="modal-overlay" *ngIf="showPlayerNameModal" (click)="closePlayerNameModal()">
+    <div class="modal-content player-name-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Inserisci il tuo nome</h2>
+        <button class="close-btn" (click)="closePlayerNameModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="input-group">
+          <input
+            type="text"
+            [(ngModel)]="playerName"
+            placeholder="Il tuo nome"
+            maxlength="20"
+            (keyup.enter)="joinRoomWithPlayerName()"
+            autofocus
+          />
+        </div>
+        <button class="btn-primary full-width" (click)="joinRoomWithPlayerName()" [disabled]="!playerName.trim()">
+          Entra nel Tavolo
         </button>
       </div>
     </div>

@@ -406,6 +406,10 @@ this.subscriptions.push(
     return this.gameState?.dealer === position;
   }
 
+  isFirstHand(position: string): boolean {
+    return this.gameState?.firstPlayer === position;
+  }
+
   getWinnerTeamName(): string {
     if (!this.gameState?.winner) return '';
     return this.getTeamNames(this.gameState.winner);

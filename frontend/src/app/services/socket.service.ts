@@ -27,8 +27,8 @@ export class SocketService {
     return this.socket.id || '';
   }
 
-  createRoom(playerName: string) {
-    this.socket.emit('createRoom', playerName);
+  createRoom(roomName: string) {
+    this.socket.emit('createRoom', roomName);
   }
 
   joinRoom(roomCode: string, playerName: string) {

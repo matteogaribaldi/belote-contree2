@@ -26,9 +26,11 @@ import { environment } from '../../environments/environment';
   ]
 })
 export class LobbyComponent implements OnInit {
+  roomName = '';
   playerName = '';
-  roomCode = '';
-  showJoinForm = false;
+  selectedRoomCode = '';
+  showPlayerNameModal = false;
+  showConfirmCreateModal = false;
   activeRooms: any[] = [];
   errorMessage = '';
   isCreatingRoom = false;
@@ -50,10 +52,15 @@ export class LobbyComponent implements OnInit {
   ngOnInit() {
     this.socketService.onRoomCreated().subscribe(data => {
       this.isCreatingRoom = false;
-      this.router.navigate(['/waiting', data.roomCode]);
+      // Dopo aver creato la stanza, mostra il modal per inserire il nome del giocatore
+      this.selectedRoomCode = data.roomCode;
+      this.showPlayerNameModal = true;
+      // Aggiorna la lista delle stanze
+      this.socketService.getActiveRooms();
     });
 
     this.socketService.onRoomJoined().subscribe(data => {
+      localStorage.setItem('belote_playerName', data.playerName);
       this.router.navigate(['/waiting', data.roomCode]);
     });
 
@@ -70,45 +77,47 @@ export class LobbyComponent implements OnInit {
   }
 
   createRoom() {
-    if (this.playerName.trim()) {
-      this.isCreatingRoom = true;
-      localStorage.setItem('belote_playerName', this.playerName.trim());
-      this.socketService.createRoom(this.playerName.trim());
-    } else {
-      this.showError('Inserisci il tuo nome prima di creare una partita');
-    }
-  }
-
-  joinRoom() {
-    if (this.playerName.trim()) {
-      localStorage.setItem('belote_playerName', this.playerName.trim());
-      // Se c'è una stanza disponibile, entra automaticamente in quella
+    if (this.roomName.trim()) {
+      // Se ci sono già tavoli attivi, mostra il popup di conferma
       if (this.activeRooms.length > 0) {
-        this.socketService.joinRoom(this.activeRooms[0].code, this.playerName.trim());
+        this.showConfirmCreateModal = true;
       } else {
-        // Altrimenti usa il roomCode manuale se fornito
-        if (this.roomCode.trim()) {
-          this.socketService.joinRoom(this.roomCode.trim().toUpperCase(), this.playerName.trim());
-        } else {
-          this.showError('Nessuna stanza disponibile');
-        }
+        // Altrimenti crea direttamente
+        this.confirmCreateRoom();
       }
     } else {
-      this.showError('Inserisci il tuo nome prima di unirti a una partita');
+      this.showError('Inserisci il nome del tavolo prima di crearlo');
     }
   }
 
-  toggleJoinForm() {
-    this.showJoinForm = !this.showJoinForm;
-    this.roomCode = '';
+  confirmCreateRoom() {
+    this.isCreatingRoom = true;
+    this.showConfirmCreateModal = false;
+    this.socketService.createRoom(this.roomName.trim());
   }
 
-  joinActiveRoom(roomCode: string) {
-    if (this.playerName.trim()) {
-      localStorage.setItem('belote_playerName', this.playerName.trim());
-      this.socketService.joinRoom(roomCode, this.playerName.trim());
+  cancelCreateRoom() {
+    this.showConfirmCreateModal = false;
+  }
+
+  selectRoom(roomCode: string) {
+    this.selectedRoomCode = roomCode;
+    this.showPlayerNameModal = true;
+    this.playerName = '';
+  }
+
+  closePlayerNameModal() {
+    this.showPlayerNameModal = false;
+    this.selectedRoomCode = '';
+    this.playerName = '';
+  }
+
+  joinRoomWithPlayerName() {
+    if (this.playerName.trim() && this.selectedRoomCode) {
+      this.socketService.joinRoom(this.selectedRoomCode, this.playerName.trim());
+      this.closePlayerNameModal();
     } else {
-      this.showError('Inserisci il tuo nome prima di unirti a una partita');
+      this.showError('Inserisci il tuo nome per unirti al tavolo');
     }
   }
 

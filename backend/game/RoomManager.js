@@ -25,25 +25,17 @@ class RoomManager {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   }
 
-  async createRoom(socket, playerName) {
-    console.log('📝 createRoom called:', { socketId: socket.id, playerName });
-
-    // Controlla se esiste già una stanza in waiting
-    const existingRoom = Array.from(this.rooms.values()).find(r => r.state === 'waiting');
-
-    if (existingRoom) {
-      console.log('⚠️  Existing room found, rejecting:', existingRoom.code);
-      socket.emit('error', { message: 'Esiste già una stanza in attesa. Unisciti a quella invece di crearne una nuova.' });
-      return;
-    }
+  async createRoom(socket, roomName) {
+    console.log('📝 createRoom called:', { socketId: socket.id, roomName });
 
     const roomCode = this.generateRoomCode();
     const creatorIp = socket.handshake.address;
-    console.log('✅ Creating new room:', { roomCode, creatorIp, playerName });
+    console.log('✅ Creating new room:', { roomCode, creatorIp, roomName });
 
     const room = {
       code: roomCode,
-      host: socket.id,
+      name: roomName || 'Tavolo senza nome',
+      host: null, // Host will be assigned when first player joins
       players: {
         north: null,
         east: null,
@@ -73,19 +65,15 @@ class RoomManager {
     };
 
     this.rooms.set(roomCode, room);
-    this.playerRooms.set(socket.id, roomCode);
-    room.playerNames[socket.id] = playerName;
 
-    socket.join(roomCode);
-    console.log('🚀 Emitting roomCreated event:', { roomCode, playerName, socketId: socket.id });
-    socket.emit('roomCreated', { roomCode, playerName });
+    console.log('🚀 Emitting roomCreated event:', { roomCode, roomName, socketId: socket.id });
+    socket.emit('roomCreated', { roomCode, roomName });
 
-    console.log(`✅ Stanza creata: ${roomCode} da ${playerName}`);
+    console.log(`✅ Stanza creata: ${roomCode} con nome "${roomName}"`);
 
     // Salva la creazione della partita nel database PostgreSQL
     await createGame(roomCode, creatorIp);
 
-    this.broadcastRoomState(roomCode);
     this.broadcastActiveRooms();
   }
 
@@ -123,10 +111,10 @@ class RoomManager {
     const hostSocket = room.host ? this.io.sockets.sockets.get(room.host) : null;
     const hostDisconnected = !hostSocket;
 
-    // Se non ci sono giocatori reali o l'host è disconnesso, il nuovo giocatore diventa host
-    if (!hasRealPlayers || hostDisconnected) {
+    // Se non c'è host o l'host è disconnesso, il nuovo giocatore diventa host
+    if (!room.host || !hasRealPlayers || hostDisconnected) {
       room.host = socket.id;
-      console.log(`${playerName} è il nuovo host della stanza ${roomCode} (${hostDisconnected ? 'host precedente disconnesso' : 'nessun altro giocatore presente'})`);
+      console.log(`${playerName} è il nuovo host della stanza ${roomCode} (${!room.host ? 'primo giocatore' : hostDisconnected ? 'host precedente disconnesso' : 'nessun altro giocatore presente'})`);
     }
 
     this.playerRooms.set(socket.id, roomCode);
@@ -311,6 +299,9 @@ room.game = {
         room.game.trump = lastBid.bid.suit;
       }
 
+      // Riordina le carte in base al seme di atout
+      this.sortHands(room.game.hands, room.game.trump);
+
       room.game.biddingPhase = false;
       room.game.currentPlayer = this.gameLogic.getNextPlayer(room.game.dealer);
       room.game.turnStartTime = Date.now();
@@ -356,6 +347,9 @@ room.game = {
     } else {
       room.game.trump = lastBid.bid.suit;
     }
+
+    // Riordina le carte in base al seme di atout
+    this.sortHands(room.game.hands, room.game.trump);
 
     room.game.biddingPhase = false;
     room.game.currentPlayer = this.gameLogic.getNextPlayer(room.game.dealer);
@@ -1082,16 +1076,17 @@ completeTrick(room) {
   }
   sortHands(hands, trump) {
   const suitOrder = { 'hearts': 0, 'diamonds': 1, 'clubs': 2, 'spades': 3 };
-  const rankOrder = { 'A': 8, 'K': 7, 'Q': 6, 'J': 5, '10': 4, '9': 3, '8': 2, '7': 1 };
-  
+
   for (let position in hands) {
     hands[position].sort((a, b) => {
       // Prima ordina per seme
       if (suitOrder[a.suit] !== suitOrder[b.suit]) {
         return suitOrder[a.suit] - suitOrder[b.suit];
       }
-      // Poi ordina per valore (dal più alto al più basso)
-      return rankOrder[b.rank] - rankOrder[a.rank];
+      // Poi ordina per valore usando getCardOrder (gestisce correttamente l'atout)
+      const orderA = this.deck.getCardOrder(a, trump);
+      const orderB = this.deck.getCardOrder(b, trump);
+      return orderB - orderA; // Dal più alto al più basso
     });
   }
 }
@@ -1182,12 +1177,19 @@ completeTrick(room) {
     for (let [code, room] of this.rooms) {
       if (room.state === 'waiting') {
         const playerCount = Object.values(room.players).filter(p => p !== null).length;
-        const hostName = room.playerNames[room.host] || 'Host';
+        const hostName = room.host ? (room.playerNames[room.host] || 'Host') : null;
+
+        // Ottieni la lista dei nomi dei giocatori connessi
+        const playerNames = Object.keys(room.playerNames)
+          .map(socketId => room.playerNames[socketId])
+          .filter(name => name); // Rimuovi eventuali null/undefined
 
         activeRooms.push({
           code: code,
+          name: room.name || 'Tavolo senza nome',
           hostName: hostName,
-          playerCount: playerCount
+          playerCount: playerCount,
+          playerNames: playerNames
         });
       }
     }
