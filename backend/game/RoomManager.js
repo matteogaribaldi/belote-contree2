@@ -233,6 +233,7 @@ room.game = {
   tricks: [],
   score: { northSouth: 0, eastWest: 0 },
   beloteRebelote: null,
+  beloteDeclared: {}, // Traccia chi ha dichiarato la belote
   lastTrick: null,
   trickConfirmations: null,
   waitingForConfirmation: false,
@@ -271,10 +272,16 @@ room.game = {
     if (!position || room.game.currentPlayer !== position) return;
 
     if (!this.isValidBid(room.game, bid, position)) {
-      if (socket && socket.emit) {
+      // Se è un bot e la bid non è valida, passa automaticamente
+      if (botPosition) {
+        console.log(`Bot ${position} ha fatto una bid non valida, passa automaticamente`);
+        bid = { type: 'pass' };
+      } else if (socket && socket.emit) {
         socket.emit('error', { message: 'Puntata non valida' });
+        return;
+      } else {
+        return;
       }
-      return;
     }
 
     // Cancella il timer del turno corrente
@@ -292,12 +299,8 @@ room.game = {
       const lastBid = [...room.game.bids].reverse().find(b => b.bid.type === 'bid' || b.bid.type === 'cappotto');
       room.game.contract = lastBid;
 
-      if (lastBid.bid.type === 'cappotto') {
-        const declarerHand = room.game.hands[lastBid.player];
-        room.game.trump = declarerHand[0].suit;
-      } else {
-        room.game.trump = lastBid.bid.suit;
-      }
+      // Usa il seme specificato nella bid (sia per cappotto che per bid normale)
+      room.game.trump = lastBid.bid.suit;
 
       // Riordina le carte in base al seme di atout
       this.sortHands(room.game.hands, room.game.trump);
@@ -340,13 +343,8 @@ room.game = {
     const lastBid = [...room.game.bids].reverse().find(b => b.bid.type === 'bid' || b.bid.type === 'cappotto');
     room.game.contract = lastBid;
 
-    // Per il cappotto, scegliamo un seme di trump casuale (potrebbe essere il primo seme della mano del dichiarante)
-    if (lastBid.bid.type === 'cappotto') {
-      const declarerHand = room.game.hands[lastBid.player];
-      room.game.trump = declarerHand[0].suit; // Usa il seme della prima carta
-    } else {
-      room.game.trump = lastBid.bid.suit;
-    }
+    // Usa il seme specificato nella bid (sia per cappotto che per bid normale)
+    room.game.trump = lastBid.bid.suit;
 
     // Riordina le carte in base al seme di atout
     this.sortHands(room.game.hands, room.game.trump);
@@ -393,13 +391,30 @@ room.game = {
 
   // Se è cappotto
   if (bid.type === 'cappotto') {
-    // Cappotto può essere dichiarato solo se nessuno ha ancora fatto offerte
-    const hasPreviousBid = game.bids.some(b => b.bid.type === 'bid' || b.bid.type === 'cappotto');
-    return !hasPreviousBid;
+    // Non si può dichiarare cappotto se c'è un contro attivo
+    if (game.contro) {
+      return false;
+    }
+
+    // Cappotto può superare qualsiasi puntata normale (80-160)
+    // Ma NON può essere dichiarato dopo un altro cappotto
+    const hasPreviousCappotto = game.bids.some(b => b.bid.type === 'cappotto');
+    if (hasPreviousCappotto) return false;
+
+    // Deve avere un seme specificato
+    const validSuits = ['hearts', 'diamonds', 'clubs', 'spades'];
+    if (!validSuits.includes(bid.suit)) return false;
+
+    return true;
   }
 
   // Se è una puntata
   if (bid.type === 'bid') {
+    // Non si può fare una nuova puntata se c'è un contro attivo
+    if (game.contro) {
+      return false;
+    }
+
     // Controlla che i punti siano validi
     const validPoints = [80, 90, 100, 110, 120, 130, 140, 150, 160];
     if (!validPoints.includes(bid.points)) {
@@ -496,10 +511,21 @@ playCard(socket, roomCode, card, botPosition = null) {
     let isBelote = false;
     let isRebelote = false;
 
+    // Controlla se il giocatore ha dichiarato la belote in precedenza
+    const hasDeclared = room.game.beloteDeclared && room.game.beloteDeclared[position];
+
     if (beloteCheck === 'belote') {
-      room.game.beloteRebelote = { player: position, announced: false };
-      isBelote = true;
-    } else if (beloteCheck === 'rebelote' && room.game.beloteRebelote) {
+      // Prima carta (K o Q) giocata
+      if (hasDeclared) {
+        // Giocatore ha dichiarato: inizia il conteggio
+        room.game.beloteRebelote = { player: position, announced: false, firstCardPlayed: true };
+        isBelote = true;
+      } else {
+        // Giocatore NON ha dichiarato: non conta la belote
+        console.log(`${position} ha giocato la prima carta della belote senza dichiararla - non conteggiata`);
+      }
+    } else if (beloteCheck === 'rebelote' && room.game.beloteRebelote && room.game.beloteRebelote.firstCardPlayed) {
+      // Seconda carta giocata: belote completa e announced
       room.game.beloteRebelote.announced = true;
       isRebelote = true;
     }
@@ -738,7 +764,7 @@ completeTrick(room) {
 
   declareBelote(socket, roomCode) {
     const room = this.rooms.get(roomCode);
-    if (!room || room.state !== 'playing') return;
+    if (!room || room.state !== 'playing' || room.game.biddingPhase) return;
 
     const playerPosition = this.getPlayerPosition(room, socket.id);
     if (!playerPosition) return;
@@ -746,23 +772,20 @@ completeTrick(room) {
     const trump = room.game.trump;
     const hand = room.game.hands[playerPosition];
 
-    // Verifica se il giocatore ha K e Q di atout
+    // Verifica se il giocatore ha K e Q di atout in mano
     const hasKing = hand.some(c => c.suit === trump && c.rank === 'K');
     const hasQueen = hand.some(c => c.suit === trump && c.rank === 'Q');
 
     if (hasKing && hasQueen) {
-      // Dichiara la Belote
-      room.game.beloteRebelote = {
-        player: playerPosition,
-        announced: true,
-        timestamp: Date.now()
-      };
+      // Salva solo la pre-dichiarazione (non announced ancora)
+      // La belote sarà "announced" solo quando giocherà effettivamente K o Q
+      room.game.beloteDeclared = room.game.beloteDeclared || {};
+      room.game.beloteDeclared[playerPosition] = true;
 
-      // Broadcast messaggio visibile a tutti
-      const playerName = room.playerNames[socket.id] || playerPosition;
+      // Mostra fumetto di dichiarazione
       room.game.lastSpeechBubble = {
         position: playerPosition,
-        message: `Belote dichiarata!`,
+        message: `Belote!`,
         isBelote: true,
         timestamp: Date.now()
       };
@@ -797,6 +820,19 @@ completeTrick(room) {
     if (!this.isBot(room, position)) return;
 
     const hand = room.game.hands[position];
+    const trump = room.game.trump;
+
+    // Prima di giocare, controlla se il bot ha la belote e non l'ha ancora dichiarata
+    if (!room.game.beloteDeclared[position] && trump) {
+      const hasKing = hand.some(c => c.suit === trump && c.rank === 'K');
+      const hasQueen = hand.some(c => c.suit === trump && c.rank === 'Q');
+
+      if (hasKing && hasQueen) {
+        // Bot dichiara automaticamente la belote
+        room.game.beloteDeclared[position] = true;
+        console.log(`Bot ${position} dichiara la belote automaticamente`);
+      }
+    }
 
     // Scegli il bot in base alla configurazione della room
     const bot = room.advancedBotAI ? this.advancedBotPlayer : this.botPlayer;

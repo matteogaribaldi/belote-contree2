@@ -24,6 +24,25 @@ class BotPlayer {
     const opponentsBid = this.getOpponentsBid(allBids, position);
     const lastBid = currentBid;
 
+    // CASO SPECIALE: C'è un contro attivo - gestisci surcontre
+    if (game && game.contro && !game.surcontre) {
+      // Trova l'ultima bid (non contro/surcontre)
+      const originalBid = [...allBids].reverse().find(b => b.bid.type === 'bid' || b.bid.type === 'cappotto');
+
+      // Controlla se siamo nella squadra che ha fatto la bid originale
+      if (originalBid) {
+        const bidderTeam = (originalBid.player === 'north' || originalBid.player === 'south') ? 'NS' : 'EW';
+        const myTeam = (position === 'north' || position === 'south') ? 'NS' : 'EW';
+
+        // Se siamo nella squadra che ha fatto la bid, possiamo fare surcontre
+        if (bidderTeam === myTeam) {
+          return this.handleSurcontreDecision(hand, originalBid, estimate, bestSuit);
+        }
+      }
+      // Altrimenti, non possiamo fare nulla, passa
+      return { type: 'pass' };
+    }
+
     // CASO 1: Partner ha già puntato
     if (partnerBid && partnerBid.bid.type === 'bid') {
       return this.handlePartnerBid(hand, partnerBid, opponentsBid, lastBid, game);
@@ -127,6 +146,54 @@ class BotPlayer {
     }
 
     // Altrimenti passo
+    return { type: 'pass' };
+  }
+
+  // CASO SPECIALE: Gestione surcontre dopo un contro
+  handleSurcontreDecision(hand, originalBid, estimate, bestSuit) {
+    const bidSuit = originalBid.bid.suit;
+    const bidPoints = originalBid.bid.points || 500; // 500 per cappotto
+
+    // Calcola la forza nella suit dell'offerta
+    const suitStrength = this.estimatePoints(hand, bidSuit);
+
+    // Se l'offerta originale è del partner e abbiamo una mano forte, surcontre
+    const isPartnerBid = this.getPartnerPosition(this.position) === originalBid.player;
+
+    if (isPartnerBid) {
+      // Il partner ha fatto la bid, valutiamo se supportare con surcontre
+      const suitCards = hand.filter(c => c.suit === bidSuit);
+      const hasJack = suitCards.some(c => c.rank === 'J');
+      const hasNine = suitCards.some(c => c.rank === '9');
+      const acesOutside = hand.filter(c => c.suit !== bidSuit && c.rank === 'A');
+
+      // Surcontre se abbiamo supporto forte (J o 9 + assi esterni)
+      if ((hasJack || hasNine) && acesOutside.length >= 1) {
+        return { type: 'surcontre' };
+      }
+
+      // Oppure se abbiamo molte carte del seme e assi esterni
+      if (suitCards.length >= 3 && acesOutside.length >= 2) {
+        return { type: 'surcontre' };
+      }
+    } else {
+      // Noi abbiamo fatto la bid originale, valutiamo se confermare con surcontre
+      const suitCards = hand.filter(c => c.suit === bidSuit);
+      const hasJack = suitCards.some(c => c.rank === 'J');
+      const hasNine = suitCards.some(c => c.rank === '9');
+
+      // Surcontre solo se siamo molto sicuri (J+9 insieme)
+      if (hasJack && hasNine && suitCards.length >= 4) {
+        return { type: 'surcontre' };
+      }
+
+      // Oppure se abbiamo puntato alto e abbiamo una mano eccezionale
+      if (bidPoints >= 110 && suitStrength >= 120) {
+        return { type: 'surcontre' };
+      }
+    }
+
+    // Se non siamo sicuri, passa
     return { type: 'pass' };
   }
 
