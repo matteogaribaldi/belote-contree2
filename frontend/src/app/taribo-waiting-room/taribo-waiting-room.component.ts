@@ -159,8 +159,9 @@ export class TariboWaitingRoomComponent implements OnInit, OnDestroy {
   }
 
   copyRoomCode() {
-    navigator.clipboard.writeText(this.roomCode);
-    this.showNotification('Codice copiato!', 'success');
+    const fullUrl = `https://www.belotta.net/taribo/waiting/${this.roomCode}`;
+    navigator.clipboard.writeText(fullUrl);
+    this.showNotification('Link copiato!', 'success');
   }
 
   showNotification(message: string, type: 'success' | 'error' | 'info' = 'info') {

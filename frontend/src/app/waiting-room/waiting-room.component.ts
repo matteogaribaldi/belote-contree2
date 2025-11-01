@@ -159,8 +159,9 @@ export class WaitingRoomComponent implements OnInit, OnDestroy {
   }
 
   copyRoomCode() {
-    navigator.clipboard.writeText(this.roomCode);
-    this.showNotification('Codice copiato!', 'success');
+    const fullUrl = `https://www.belotta.net/waiting/${this.roomCode}`;
+    navigator.clipboard.writeText(fullUrl);
+    this.showNotification('Link copiato!', 'success');
   }
 
   showNotification(message: string, type: 'success' | 'error' | 'info' = 'info') {

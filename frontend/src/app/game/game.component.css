@@ -25,7 +25,7 @@
 .game-container {
   min-height: 100vh;
   min-height: -webkit-fill-available; /* iOS Safari fix */
-  padding: max(20px, env(safe-area-inset-top)) 20px 20px 20px;
+  padding: max(20px, env(safe-area-inset-top)) 20px 80px 20px; /* Bottom padding for fixed timer */
   padding-top: max(20px, env(safe-area-inset-top));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -40,19 +40,25 @@
   position: relative;
 }
 
-/* Timer styles */
+/* Timer styles - Fixed at bottom */
 .turn-timer-container {
-  background: rgba(255, 255, 255, 0.1);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
-  border-radius: 10px;
-  padding: 15px;
-  margin-bottom: 20px;
+  border-radius: 0;
+  padding: 10px 15px;
+  margin-bottom: 0;
+  z-index: 100;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .timer-label {
   text-align: center;
-  font-size: 16px;
-  margin-bottom: 10px;
+  font-size: 14px;
+  margin-bottom: 6px;
   font-weight: 500;
 }
 
@@ -64,9 +70,9 @@
 
 .timer-bar-wrapper {
   width: 100%;
-  height: 20px;
+  height: 16px;
   background: linear-gradient(90deg, #4CAF50, #8BC34A);
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   position: relative;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
@@ -187,19 +193,21 @@
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border-radius: 15px;
-  padding: 30px;
+  padding: 15px;
+  padding-bottom: 80px; /* Space for fixed timer at bottom */
   max-width: 600px;
   margin: 0 auto;
 }
 
 .bidding-phase h2 {
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 15px;
+  font-size: 22px;
 }
 
 .bids-history {
-  margin-bottom: 25px;
-  padding: 15px;
+  margin-bottom: 15px;
+  padding: 10px;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 10px;
 }
@@ -207,13 +215,14 @@
 .bid-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
 }
 
 .bid-item {
-  padding: 8px;
+  padding: 6px 8px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 5px;
+  font-size: 14px;
 }
 
 /* Team colors for bidding phase */
@@ -229,23 +238,24 @@
 
 .bidding-actions h3 {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   color: #4CAF50;
+  font-size: 18px;
 }
 
 .suit-selection {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .btn-suit {
   background: rgba(255, 255, 255, 0.2);
   color: white;
-  padding: 20px;
-  font-size: 20px;
-  border-radius: 10px;
+  padding: 12px;
+  font-size: 18px;
+  border-radius: 8px;
 }
 
 .btn-suit:hover {
@@ -262,28 +272,28 @@
 }
 
 .points-selection {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .points-selection h4 {
   text-align: center;
-  margin-bottom: 15px;
-  font-size: 20px;
+  margin-bottom: 10px;
+  font-size: 17px;
 }
 
 .points-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 15px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .btn-points {
   background: rgba(76, 175, 80, 0.3);
   color: white;
-  padding: 15px;
-  font-size: 18px;
-  border-radius: 8px;
+  padding: 10px 8px;
+  font-size: 16px;
+  border-radius: 6px;
 }
 
 .btn-points:hover:not(:disabled) {
@@ -301,7 +311,7 @@
   border: 2px solid #FFD700;
   font-weight: 900;
   text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-  grid-column: span 3;
+  grid-column: span 4;
 }
 
 .btn-points.btn-cappotto:hover:not(:disabled) {
@@ -313,16 +323,17 @@
   background: rgba(255, 255, 255, 0.2);
   color: white;
   width: 100%;
-  padding: 12px;
-  margin-bottom: 15px;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 15px;
 }
 
 .btn-pass {
   background: rgba(255, 152, 0, 0.8);
   color: white;
   width: 100%;
-  padding: 15px;
-  font-size: 18px;
+  padding: 12px;
+  font-size: 16px;
 }
 
 .btn-pass:hover {
@@ -331,7 +342,7 @@
 
 .waiting-bid {
   text-align: center;
-  padding: 30px;
+  padding: 20px;
 }
 
 .loader {
@@ -715,6 +726,36 @@
 
 /* Mobile breakpoint - Small screens */
 @media (max-width: 768px) {
+  .game-container {
+    padding-bottom: 70px; /* Smaller padding for mobile */
+  }
+
+  .turn-timer-container {
+    padding: 8px 12px;
+  }
+
+  .timer-label {
+    font-size: 13px;
+    margin-bottom: 5px;
+  }
+
+  .timer-bar-wrapper {
+    height: 14px;
+  }
+
+  .bidding-phase {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+
+  .points-grid {
+    grid-template-columns: repeat(3, 1fr); /* Back to 3 columns on mobile */
+  }
+
+  .btn-points.btn-cappotto {
+    grid-column: span 3; /* Cappotto spans 3 columns on mobile */
+  }
+
   .game-table {
     padding: 35px 20px;
     min-height: 380px;
@@ -817,22 +858,23 @@
 }
 
 .player-hand-bidding {
-  margin-top: 30px;
-  padding: 20px;
+  margin-top: 15px;
+  padding: 12px;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 10px;
 }
 
 .player-hand-bidding h3 {
   text-align: center;
-  margin-bottom: 15px;
-  font-size: 16px;
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .player-hand-bidding .cards {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
@@ -884,16 +926,16 @@
 }
 .special-bids {
   display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .btn-cappotto, .btn-contro, .btn-surcontre {
   flex: 1;
-  padding: 15px;
-  font-size: 16px;
+  padding: 10px 8px;
+  font-size: 15px;
   font-weight: bold;
-  border-radius: 8px;
+  border-radius: 6px;
   transition: all 0.3s;
 }
 
@@ -1020,10 +1062,11 @@
   background: rgba(76, 175, 80, 0.2);
   border: 2px solid #4CAF50;
   border-radius: 8px;
-  padding: 10px;
-  margin: 10px 0;
+  padding: 8px;
+  margin: 8px 0;
   text-align: center;
   font-weight: 600;
+  font-size: 14px;
   color: #4CAF50;
   animation: pulse 2s infinite;
 }
