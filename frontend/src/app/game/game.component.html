@@ -4,7 +4,7 @@
     <div class="score-panel">
       <div class="team-score" [class.my-team]="isMyTeam('northSouth')">
         <h3>{{ getTeamNames('northSouth') }}</h3>
-        <div class="score">{{ gameState.gameScore.northSouth }} <small class="target-score">/ {{ gameState.targetScore }}</small></div>
+        <div class="score">{{ gameState.gameScore.northSouth }} <span class="target-score">/ {{ gameState.targetScore }}</span></div>
         <small class="hand-score" *ngIf="!gameState.biddingPhase">(Mano: {{ gameState.score.northSouth }})</small>
       </div>
       <div class="contract-info" *ngIf="gameState.contract">
@@ -26,7 +26,7 @@
       </div>
       <div class="team-score" [class.my-team]="isMyTeam('eastWest')">
         <h3>{{ getTeamNames('eastWest') }}</h3>
-        <div class="score">{{ gameState.gameScore.eastWest }} <small class="target-score">/ {{ gameState.targetScore }}</small></div>
+        <div class="score">{{ gameState.gameScore.eastWest }} <span class="target-score">/ {{ gameState.targetScore }}</span></div>
         <small class="hand-score" *ngIf="!gameState.biddingPhase">(Mano: {{ gameState.score.eastWest }})</small>
       </div>
     </div>

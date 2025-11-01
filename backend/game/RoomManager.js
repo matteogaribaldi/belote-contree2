@@ -1140,6 +1140,7 @@ completeTrick(room) {
         contro: room.game.contro,
         surcontre: room.game.surcontre,
         gameScore: room.gameScore,
+        targetScore: room.targetScore || 501,
         handHistory: room.handHistory,
         gameOver: room.game.gameOver,
         winner: room.game.winner,

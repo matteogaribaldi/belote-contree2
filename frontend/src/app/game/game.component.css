@@ -165,9 +165,11 @@
 }
 
 .target-score {
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: normal;
+  font-size: 24px;
+  color: #ffffff;
+  font-weight: 400;
+  opacity: 0.9;
+  margin-left: 4px;
 }
 
 .contract-info {

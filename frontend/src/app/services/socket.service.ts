@@ -93,49 +93,65 @@ export class SocketService {
 
   onReconnected(): Observable<any> {
     return new Observable(observer => {
-      this.socket.on('reconnected', (data) => observer.next(data));
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('reconnected', handler);
+      return () => this.socket.off('reconnected', handler);
     });
   }
 
   onRoomCreated(): Observable<any> {
     return new Observable(observer => {
-      this.socket.on('roomCreated', (data) => observer.next(data));
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('roomCreated', handler);
+      return () => this.socket.off('roomCreated', handler);
     });
   }
 
   onRoomJoined(): Observable<any> {
     return new Observable(observer => {
-      this.socket.on('roomJoined', (data) => observer.next(data));
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('roomJoined', handler);
+      return () => this.socket.off('roomJoined', handler);
     });
   }
 
   onRoomState(): Observable<any> {
     return new Observable(observer => {
-      this.socket.on('roomState', (data) => observer.next(data));
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('roomState', handler);
+      return () => this.socket.off('roomState', handler);
     });
   }
 
   onGameState(): Observable<any> {
     return new Observable(observer => {
-      this.socket.on('gameState', (data) => observer.next(data));
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('gameState', handler);
+      return () => this.socket.off('gameState', handler);
     });
   }
 
   onError(): Observable<any> {
     return new Observable(observer => {
-      this.socket.on('error', (data) => observer.next(data));
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('error', handler);
+      return () => this.socket.off('error', handler);
     });
   }
 
   onActiveRoomsList(): Observable<any> {
     return new Observable(observer => {
-      this.socket.on('activeRoomsList', (data) => observer.next(data));
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('activeRoomsList', handler);
+      return () => this.socket.off('activeRoomsList', handler);
     });
   }
 
   onRoomDeleted(): Observable<any> {
     return new Observable(observer => {
-      this.socket.on('roomDeleted', (data) => observer.next(data));
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('roomDeleted', handler);
+      return () => this.socket.off('roomDeleted', handler);
     });
   }
 
@@ -190,31 +206,41 @@ export class SocketService {
 
   onTariboRoomCreated(): Observable<any> {
     return new Observable(observer => {
-      this.socket.on('taribo:roomCreated', (data) => observer.next(data));
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('taribo:roomCreated', handler);
+      return () => this.socket.off('taribo:roomCreated', handler);
     });
   }
 
   onTariboRoomJoined(): Observable<any> {
     return new Observable(observer => {
-      this.socket.on('taribo:roomJoined', (data) => observer.next(data));
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('taribo:roomJoined', handler);
+      return () => this.socket.off('taribo:roomJoined', handler);
     });
   }
 
   onTariboRoomState(): Observable<any> {
     return new Observable(observer => {
-      this.socket.on('taribo:roomState', (data) => observer.next(data));
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('taribo:roomState', handler);
+      return () => this.socket.off('taribo:roomState', handler);
     });
   }
 
   onTariboGameState(): Observable<any> {
     return new Observable(observer => {
-      this.socket.on('taribo:gameState', (data) => observer.next(data));
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('taribo:gameState', handler);
+      return () => this.socket.off('taribo:gameState', handler);
     });
   }
 
   onTariboActiveRoomsList(): Observable<any> {
     return new Observable(observer => {
-      this.socket.on('taribo:activeRoomsList', (data) => observer.next(data));
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('taribo:activeRoomsList', handler);
+      return () => this.socket.off('taribo:activeRoomsList', handler);
     });
   }
 }
