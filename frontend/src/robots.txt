@@ -1,0 +1,30 @@
+# robots.txt per Belotta.net - Belote Contrée Online
+
+# Consenti a tutti i bot di indicizzare il sito
+User-agent: *
+Allow: /
+
+# Blocca aree private/API (se presenti)
+Disallow: /api/
+Disallow: /admin/
+Disallow: /socket.io/
+
+# Sitemap
+Sitemap: https://belotta.net/sitemap.xml
+
+# Crawl delay per essere rispettosi
+Crawl-delay: 1
+
+# Bot specifici - Googlebot
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Bot specifici - Bingbot
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 0
+
+# Bot specifici - Altri motori italiani
+User-agent: Slurp
+Allow: /

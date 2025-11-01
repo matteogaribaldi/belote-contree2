@@ -677,12 +677,29 @@ completeTrick(room) {
       }
     } else {
       // Contratto normale
-      if (teamScore >= contractPoints) {
+      const otherTeam = contractTeam === 'northSouth' ? 'eastWest' : 'northSouth';
+
+      // Verifica se qualcuno ha fatto cappotto non dichiarato (tutte le carte)
+      const nsAllTricks = room.game.tricks.every(trick => {
+        const winner = trick.winner;
+        return winner === 'north' || winner === 'south';
+      });
+      const ewAllTricks = room.game.tricks.every(trick => {
+        const winner = trick.winner;
+        return winner === 'east' || winner === 'west';
+      });
+
+      if (nsAllTricks || ewAllTricks) {
+        // Cappotto non dichiarato: 250 punti a chi ha preso tutte le carte
+        const cappottoTeam = nsAllTricks ? 'northSouth' : 'eastWest';
+        finalScore[cappottoTeam] = 250 * multiplier;
+        finalScore[cappottoTeam === 'northSouth' ? 'eastWest' : 'northSouth'] = 0;
+      } else if (teamScore >= contractPoints) {
+        // Contratto rispettato
         finalScore[contractTeam] = room.game.score[contractTeam] * multiplier;
-        const otherTeam = contractTeam === 'northSouth' ? 'eastWest' : 'northSouth';
         finalScore[otherTeam] = room.game.score[otherTeam] * multiplier;
       } else {
-        const otherTeam = contractTeam === 'northSouth' ? 'eastWest' : 'northSouth';
+        // Contratto fallito: 162 punti agli avversari
         finalScore[otherTeam] = 162 * multiplier;
         if (room.game.beloteRebelote && room.game.beloteRebelote.announced) {
           const beloteTeam = room.game.beloteRebelote.player === 'north' || room.game.beloteRebelote.player === 'south'
