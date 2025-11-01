@@ -15,7 +15,7 @@
         </div>
         <div class="contract-details">
           <span *ngIf="gameState.contract.bid.type === 'cappotto'">
-            Contratto: Cappotto (250 punti)
+            Contratto: Cappotto (500 punti)
           </span>
           <span *ngIf="gameState.contract.bid.type !== 'cappotto'">
             Contratto: {{ gameState.contract.bid.points }} punti
@@ -68,7 +68,12 @@
               {{ getSuitSymbol(bidEntry.bid.suit) }}
             </span>
           </span>
-          <span *ngIf="bidEntry.bid.type === 'cappotto'" class="cappotto-badge">Cappotto (500)</span>
+          <span *ngIf="bidEntry.bid.type === 'cappotto'" class="cappotto-badge">
+            Cappotto (500) -
+            <span [class]="getCardClass({suit: bidEntry.bid.suit})">
+              {{ getSuitSymbol(bidEntry.bid.suit) }}
+            </span>
+          </span>
           <span *ngIf="bidEntry.bid.type === 'contro'" class="contro-badge">Contro</span>
           <span *ngIf="bidEntry.bid.type === 'surcontre'" class="surcontre-badge">Surcontre</span>
         </div>
@@ -103,23 +108,17 @@
           <button
             *ngFor="let points of bidPoints"
             class="btn-points"
+            [class.btn-cappotto]="isCappotto(points)"
             [disabled]="!canBidPoints(points)"
-            (click)="placeBid('bid', selectedBid.suit, points)"
+            (click)="isCappotto(points) ? placeBid('cappotto', selectedBid.suit) : placeBid('bid', selectedBid.suit, points)"
           >
-            {{ points }}
+            {{ getPointsLabel(points) }}
           </button>
         </div>
         <button class="btn-back" (click)="selectedBid = null">Indietro</button>
       </div>
 
       <div class="special-bids">
-        <button
-          class="btn-cappotto"
-          *ngIf="canCappotto()"
-          (click)="placeCappotto()"
-        >
-          Cappotto (500)
-        </button>
         <button
           class="btn-contro"
           *ngIf="canContro()"
@@ -263,7 +262,7 @@
     </div>
 
     <!-- Belote-Rebelote -->
-    <div class="belote-notice" *ngIf="gameState.beloteRebelote?.announced">
+    <div class="belote-notice" *ngIf="showBelotePopup" @fadeInOut>
       🎉 Belote-Rebelote! +20 punti
     </div>
   </div>
@@ -326,7 +325,7 @@
       <h1>🎉 Partita Terminata! 🎉</h1>
 
       <div class="victory-image">
-        <img src="/img/Subject.png" alt="Victory" class="subject-img">
+        <img src="assets/Subject.webp" alt="Victory" class="subject-img">
       </div>
 
       <div class="winner-announcement-big">
@@ -350,7 +349,14 @@
         <div class="history-list">
           <div class="history-item" *ngFor="let hand of gameState.handHistory">
             <span class="hand-number">Mano {{ hand.handNumber }}</span>
-            <span class="hand-contract">{{ hand.contract.bid.points }} {{ getSuitSymbol(hand.contract.bid.suit) }}</span>
+            <span class="hand-contract">
+              <span *ngIf="hand.contract.bid.type !== 'cappotto'">
+                {{ hand.contract.bid.points }} {{ getSuitSymbol(hand.contract.bid.suit) }}
+              </span>
+              <span *ngIf="hand.contract.bid.type === 'cappotto'">
+                Cappotto {{ getSuitSymbol(hand.contract.bid.suit) }}
+              </span>
+            </span>
             <span class="hand-scores">{{ hand.finalScore.northSouth }} - {{ hand.finalScore.eastWest }}</span>
           </div>
         </div>

@@ -58,6 +58,8 @@ export class GameComponent implements OnInit, OnDestroy {
   showInitialHands = false;
   timerPercentage = 100;
   private timerInterval: any;
+  showBelotePopup = false;
+  private belotePopupTimeout: any;
 
   // Animation state properties
   dealingCards = false;
@@ -79,7 +81,7 @@ export class GameComponent implements OnInit, OnDestroy {
     spades: 'Picche'
   };
 
-  bidPoints = [80, 90, 100, 110, 120, 130, 140, 150, 160];
+  bidPoints = [80, 90, 100, 110, 120, 130, 140, 150, 160, 'cappotto'];
 
   private subscriptions: Subscription[] = [];
 
@@ -135,10 +137,21 @@ this.subscriptions.push(
       this.audioService.play('playCard');
     }
 
-    // Riproduci suono Belote/Rebelote
+    // Riproduci suono Belote/Rebelote e mostra popup
     if (state.beloteRebelote?.announced &&
         (!previousState?.beloteRebelote?.announced)) {
       this.audioService.play('belote');
+
+      // Mostra popup "+20 punti"
+      this.showBelotePopup = true;
+
+      // Nascondi popup dopo 4 secondi
+      if (this.belotePopupTimeout) {
+        clearTimeout(this.belotePopupTimeout);
+      }
+      this.belotePopupTimeout = setTimeout(() => {
+        this.showBelotePopup = false;
+      }, 4000);
     }
 
     // Mostra animazione vincitore quando un trick è completo (4 carte sul tavolo)
@@ -203,19 +216,27 @@ this.subscriptions.push(
     if (this.timerInterval) {
       clearInterval(this.timerInterval);
     }
+    if (this.belotePopupTimeout) {
+      clearTimeout(this.belotePopupTimeout);
+    }
   }
 
   isMyTurn(): boolean {
     return this.gameState && this.gameState.currentPlayer === this.gameState.position;
   }
 
-  placeBid(type: string, suit?: string, points?: number) {
+  placeBid(type: string, suit?: string, points?: number | string) {
     if (!this.isMyTurn()) return;
 
     const bid: any = { type };
     if (type === 'bid' && suit && points) {
       bid.suit = suit;
       bid.points = points;
+      this.audioService.play('bid');
+    } else if (type === 'cappotto' && suit) {
+      bid.type = 'cappotto';
+      bid.suit = suit;
+      bid.points = 250;
       this.audioService.play('bid');
     } else if (type === 'pass') {
       this.audioService.play('pass');
@@ -256,13 +277,16 @@ this.subscriptions.push(
 
   getMinBidPoints(): number {
     if (!this.gameState || !this.gameState.bids) return 80;
-    
+
     const lastBid = [...this.gameState.bids].reverse().find((b: any) => b.bid.type === 'bid');
     return lastBid ? lastBid.bid.points + 10 : 80;
   }
 
-  canBidPoints(points: number): boolean {
-    return points >= this.getMinBidPoints();
+  canBidPoints(points: number | string): boolean {
+    if (points === 'cappotto') {
+      return this.canBidCappotto();
+    }
+    return (points as number) >= this.getMinBidPoints();
   }
 
   selectBidSuit(suit: string) {
@@ -314,20 +338,20 @@ this.subscriptions.push(
     this.socketService.placeBid(this.roomCode, { type: 'surcontre' });
   }
 
-  canCappotto(): boolean {
-    if (!this.gameState || !this.gameState.bids) return false;
+  canBidCappotto(): boolean {
+    if (!this.gameState || !this.gameState.bids) return true;
 
-    // Controlla se nessuno ha ancora fatto un'offerta (solo pass finora)
-    const hasBid = this.gameState.bids.some((b: any) => b.bid.type === 'bid' || b.bid.type === 'cappotto');
-    return !hasBid;
+    // Cappotto può essere dichiarato se non c'è già un altro cappotto
+    const hasCappotto = this.gameState.bids.some((b: any) => b.bid.type === 'cappotto');
+    return !hasCappotto;
   }
 
-  placeCappotto() {
-    if (!this.isMyTurn() || !this.canCappotto()) return;
+  isCappotto(points: any): boolean {
+    return points === 'cappotto';
+  }
 
-    // Il cappotto viene dichiarato senza seme (si giocano tutte le mani)
-    this.socketService.placeBid(this.roomCode, { type: 'cappotto', points: 250 });
-    this.audioService.play('bid');
+  getPointsLabel(points: any): string {
+    return points === 'cappotto' ? 'Cappotto' : points.toString();
   }
 
   getTrickPosition(position: string): string {

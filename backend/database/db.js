@@ -228,6 +228,115 @@ async function getGamesList(limit = 50) {
   }
 }
 
+// Save or update game state for recovery
+async function upsertGameState(roomCode, gameState, roomMetadata, gameId = null) {
+  if (!pool) return null;
+
+  try {
+    await pool.query(
+      `INSERT INTO game_states (room_code, game_id, game_state, room_metadata, last_updated, expires_at)
+       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '2 hours')
+       ON CONFLICT (room_code)
+       DO UPDATE SET
+         game_state = $3,
+         room_metadata = $4,
+         last_updated = CURRENT_TIMESTAMP,
+         expires_at = CURRENT_TIMESTAMP + INTERVAL '2 hours',
+         version = game_states.version + 1`,
+      [roomCode, gameId, JSON.stringify(gameState), JSON.stringify(roomMetadata)]
+    );
+    return true;
+  } catch (error) {
+    console.error('⚠ Cannot save game state (game continues):', error.message);
+    return null;
+  }
+}
+
+// Get game state for a specific room
+async function getGameState(roomCode) {
+  if (!pool) return null;
+
+  try {
+    const result = await pool.query(
+      `SELECT game_state, room_metadata, version, last_updated
+       FROM game_states
+       WHERE room_code = $1 AND expires_at > CURRENT_TIMESTAMP`,
+      [roomCode]
+    );
+
+    if (result.rows.length === 0) return null;
+
+    return {
+      roomCode,
+      gameState: result.rows[0].game_state,
+      roomMetadata: result.rows[0].room_metadata,
+      version: result.rows[0].version,
+      lastUpdated: result.rows[0].last_updated
+    };
+  } catch (error) {
+    console.error('✗ Error fetching game state:', error.message);
+    return null;
+  }
+}
+
+// Get all active game states (not expired)
+async function getActiveGameStates() {
+  if (!pool) return [];
+
+  try {
+    const result = await pool.query(
+      `SELECT room_code, game_state, room_metadata, version, last_updated
+       FROM game_states
+       WHERE expires_at > CURRENT_TIMESTAMP
+       ORDER BY last_updated DESC`
+    );
+
+    return result.rows.map(row => ({
+      roomCode: row.room_code,
+      gameState: row.game_state,
+      roomMetadata: row.room_metadata,
+      version: row.version,
+      lastUpdated: row.last_updated
+    }));
+  } catch (error) {
+    console.error('✗ Error fetching active game states:', error.message);
+    return [];
+  }
+}
+
+// Clean up expired game states
+async function cleanupExpiredStates() {
+  if (!pool) return 0;
+
+  try {
+    const result = await pool.query(
+      `DELETE FROM game_states
+       WHERE expires_at < CURRENT_TIMESTAMP
+       RETURNING room_code`
+    );
+
+    const count = result.rows.length;
+    if (count > 0) {
+      console.log(`🧹 Cleaned up ${count} expired game state(s)`);
+    }
+    return count;
+  } catch (error) {
+    console.error('✗ Error cleaning up expired states:', error.message);
+    return 0;
+  }
+}
+
+// Delete game state when game ends normally
+async function deleteGameState(roomCode) {
+  if (!pool) return;
+
+  try {
+    await pool.query('DELETE FROM game_states WHERE room_code = $1', [roomCode]);
+  } catch (error) {
+    console.error('✗ Error deleting game state:', error.message);
+  }
+}
+
 module.exports = {
   pool,
   initializeDatabase,
@@ -237,5 +346,11 @@ module.exports = {
   recordHand,
   getGameStats,
   getPlayerStats,
-  getGamesList
+  getGamesList,
+  // Game state persistence functions
+  upsertGameState,
+  getGameState,
+  getActiveGameStates,
+  cleanupExpiredStates,
+  deleteGameState
 };

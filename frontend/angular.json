@@ -28,7 +28,9 @@
               "src/favicon-16.png",
               "src/favicon-32.png",
               "src/assets",
-              "src/_headers"
+              "src/_headers",
+              "src/robots.txt",
+              "src/sitemap.xml"
             ],
             "styles": [
               "src/styles.css"
@@ -95,7 +97,9 @@
               "src/favicon.ico",
               "src/favicon-16.png",
               "src/favicon-32.png",
-              "src/assets"
+              "src/assets",
+              "src/robots.txt",
+              "src/sitemap.xml"
             ],
             "styles": [
               "src/styles.css"

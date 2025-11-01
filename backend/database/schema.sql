@@ -45,3 +45,17 @@ CREATE TABLE IF NOT EXISTS hands (
 );
 
 CREATE INDEX IF NOT EXISTS idx_game_id ON hands(game_id);
+
+-- Game state persistence table for recovery after backend restart
+CREATE TABLE IF NOT EXISTS game_states (
+    room_code VARCHAR(6) PRIMARY KEY,
+    game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
+    game_state JSONB NOT NULL,
+    room_metadata JSONB NOT NULL,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    version INTEGER DEFAULT 1,
+    expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL '2 hours')
+);
+
+CREATE INDEX IF NOT EXISTS idx_game_states_expires ON game_states(expires_at);
+CREATE INDEX IF NOT EXISTS idx_game_states_updated ON game_states(last_updated);
