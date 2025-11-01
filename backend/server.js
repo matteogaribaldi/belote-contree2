@@ -5,11 +5,14 @@ const cors = require('cors');
 const RoomManager = require('./game/RoomManager');
 const TariboRoomManager = require('./game/TariboRoomManager');
 const { getRecentGames, getTotalGames } = require('./game/database');
-const { initializeDatabase, getGameStats, getPlayerStats, getGamesList } = require('./database/db');
 
 // CORS Configuration
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [process.env.FRONTEND_URL || 'https://belote-frontend.onrender.com']
+  ? [
+      process.env.FRONTEND_URL || 'https://belote-frontend.onrender.com',
+      'https://belotta.net',
+      'https://www.belotta.net'
+    ]
   : ['http://localhost:4200', 'http://localhost:3000'];
 
 const app = express();
@@ -183,122 +186,10 @@ app.get('/api/game-history', (req, res) => {
   }
 });
 
-// REST API endpoint per statistiche PostgreSQL
-app.get('/api/stats', async (req, res) => {
-  try {
-    const stats = await getGameStats();
-
-    if (!stats) {
-      return res.json({
-        success: false,
-        message: 'Database non configurato o nessuna partita registrata',
-        stats: {
-          total_games: 0,
-          completed_games: 0,
-          ns_wins: 0,
-          ew_wins: 0,
-          avg_score_ns: 0,
-          avg_score_ew: 0
-        }
-      });
-    }
-
-    res.json({
-      success: true,
-      stats: {
-        total_games: parseInt(stats.total_games) || 0,
-        completed_games: parseInt(stats.completed_games) || 0,
-        ns_wins: parseInt(stats.ns_wins) || 0,
-        ew_wins: parseInt(stats.ew_wins) || 0,
-        avg_score_ns: parseFloat(stats.avg_score_ns) || 0,
-        avg_score_ew: parseFloat(stats.avg_score_ew) || 0
-      }
-    });
-  } catch (error) {
-    console.error('Errore nel recuperare le statistiche:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Errore nel recuperare le statistiche'
-    });
-  }
-});
-
-// REST API endpoint per statistiche giocatori
-app.get('/api/player-stats', async (req, res) => {
-  try {
-    const playerStats = await getPlayerStats();
-
-    if (!playerStats) {
-      return res.json({
-        success: false,
-        message: 'Database non configurato o nessuna partita registrata',
-        players: []
-      });
-    }
-
-    res.json({
-      success: true,
-      players: playerStats.map(p => ({
-        name: p.player_name,
-        totalGames: parseInt(p.total_games) || 0,
-        wins: parseInt(p.wins) || 0
-      }))
-    });
-  } catch (error) {
-    console.error('Errore nel recuperare le statistiche giocatori:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Errore nel recuperare le statistiche giocatori'
-    });
-  }
-});
-
-// REST API endpoint per lista partite completate
-app.get('/api/games-list', async (req, res) => {
-  try {
-    const limit = parseInt(req.query.limit) || 50;
-    const gamesList = await getGamesList(limit);
-
-    if (!gamesList) {
-      return res.json({
-        success: false,
-        message: 'Database non configurato o nessuna partita registrata',
-        games: []
-      });
-    }
-
-    res.json({
-      success: true,
-      totalGames: gamesList.length,
-      games: gamesList.map(g => ({
-        roomCode: g.room_code,
-        createdAt: g.created_at,
-        endedAt: g.ended_at,
-        winningTeam: g.winning_team,
-        scoreNS: g.final_score_ns,
-        scoreEW: g.final_score_ew,
-        totalHands: g.total_hands,
-        players: {
-          north: { name: g.player_north, isBot: g.is_bot_north },
-          east: { name: g.player_east, isBot: g.is_bot_east },
-          south: { name: g.player_south, isBot: g.is_bot_south },
-          west: { name: g.player_west, isBot: g.is_bot_west }
-        }
-      }))
-    });
-  } catch (error) {
-    console.error('Errore nel recuperare la lista partite:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Errore nel recuperare la lista partite'
-    });
-  }
-});
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, async () => {
   console.log(`Server in ascolto sulla porta ${PORT}`);
-  await initializeDatabase();
 
   // Recover active games from database
   await roomManager.recoverActiveGames();

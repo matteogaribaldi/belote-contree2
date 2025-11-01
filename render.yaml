@@ -1,10 +1,3 @@
-databases:
-  # PostgreSQL Database (Free tier)
-  - name: belote-db
-    plan: free
-    databaseName: belote
-    user: belote
-
 services:
   # Backend Service
   - type: web
@@ -22,10 +15,6 @@ services:
         value: 10000
       - key: FRONTEND_URL
         value: https://belote-frontend.onrender.com
-      - key: DATABASE_URL
-        fromDatabase:
-          name: belote-db
-          property: connectionString
 
   # Frontend Service (Static Site)
   - type: web

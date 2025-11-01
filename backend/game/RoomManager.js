@@ -3,16 +3,6 @@ const GameLogic = require('./GameLogic');
 const BotPlayer = require('./BotPlayer');
 const AdvancedBotPlayer = require('./AdvancedBotPlayer');
 const { saveGame } = require('./database');
-const {
-  createGame,
-  updateGamePlayers,
-  endGame,
-  upsertGameState,
-  getGameState,
-  getActiveGameStates,
-  cleanupExpiredStates,
-  deleteGameState
-} = require('../database/db');
 
 class RoomManager {
   constructor(io) {
@@ -74,9 +64,6 @@ class RoomManager {
     socket.emit('roomCreated', { roomCode, roomName });
 
     console.log(`✅ Stanza creata: ${roomCode}`);
-
-    // Salva la creazione della partita nel database PostgreSQL
-    await createGame(roomCode, creatorIp);
 
     this.broadcastActiveRooms();
   }
@@ -184,15 +171,6 @@ class RoomManager {
 
     this.broadcastRoomState(roomCode);
     this.broadcastActiveRooms();
-
-    // Aggiorna nomi giocatori e bot nel database
-    const playerMap = {
-      N: this.getPlayerName(room, 'north'),
-      E: this.getPlayerName(room, 'east'),
-      S: this.getPlayerName(room, 'south'),
-      W: this.getPlayerName(room, 'west')
-    };
-    await updateGamePlayers(roomCode, playerMap, room.bots);
 
     this.initializeGame(room);
 
@@ -738,16 +716,6 @@ completeTrick(room) {
 
       // Salva la partita completata nel database SQLite (locale)
       this.saveGameToDatabase(room);
-
-      // Salva la partita completata nel database PostgreSQL (cloud)
-      const winningTeam = room.game.winner === 'northSouth' ? 'NS' : 'EW';
-      await endGame(
-        room.code,
-        winningTeam,
-        room.gameScore.northSouth,
-        room.gameScore.eastWest,
-        room.handHistory.length
-      );
     }
 
     this.broadcastGameState(room.code);
@@ -1455,38 +1423,8 @@ completeTrick(room) {
    * Called after critical game events (bid, card play, trick completion)
    */
   async saveGameState(roomCode) {
-    const room = this.rooms.get(roomCode);
-    if (!room || !room.game || room.state !== 'playing') return;
-
-    // Clear existing timeout
-    if (room.saveTimeout) {
-      clearTimeout(room.saveTimeout);
-    }
-
-    // Debounce: wait 300ms before saving
-    room.saveTimeout = setTimeout(async () => {
-      try {
-        const roomMetadata = {
-          code: room.code,
-          name: room.name,
-          host: room.host,
-          players: room.players,
-          bots: room.bots,
-          disconnectedStatus: room.disconnectedStatus,
-          playerNames: room.playerNames,
-          botCounter: room.botCounter,
-          state: room.state,
-          gameScore: room.gameScore,
-          targetScore: room.targetScore,
-          advancedBotAI: room.advancedBotAI,
-          handHistory: room.handHistory
-        };
-
-        await upsertGameState(roomCode, room.game, roomMetadata, room.gameId);
-      } catch (error) {
-        // Error already logged in upsertGameState, game continues
-      }
-    }, 300);
+    // PostgreSQL removed - game state is only in memory now
+    // Future: can use SQLite for game state persistence
   }
 
   /**
@@ -1494,35 +1432,7 @@ completeTrick(room) {
    * Called during server initialization
    */
   async recoverActiveGames() {
-    try {
-      const activeStates = await getActiveGameStates();
-
-      if (activeStates.length === 0) {
-        console.log('ℹ️  No active games to recover');
-        return;
-      }
-
-      console.log(`♻️  Recovering ${activeStates.length} active game(s)...`);
-
-      for (const state of activeStates) {
-        try {
-          const room = {
-            ...state.roomMetadata,
-            game: state.gameState,
-            saveTimeout: null
-          };
-
-          this.rooms.set(room.code, room);
-          console.log(`   ✓ Recovered game: ${room.code} (last updated: ${state.lastUpdated})`);
-        } catch (error) {
-          console.error(`   ✗ Failed to recover game ${state.roomCode}:`, error.message);
-        }
-      }
-
-      console.log(`♻️  Game recovery complete: ${this.rooms.size} room(s) in memory`);
-    } catch (error) {
-      console.error('⚠ Cannot recover games (starting fresh):', error.message);
-    }
+    console.log('ℹ️  No game recovery (PostgreSQL removed)');
   }
 
   /**
@@ -1530,14 +1440,14 @@ completeTrick(room) {
    * Should be called via cron job or interval
    */
   async cleanupExpired() {
-    await cleanupExpiredStates();
+    // PostgreSQL removed - no cleanup needed
   }
 
   /**
    * Delete game state when game ends normally
    */
   async removeGameState(roomCode) {
-    await deleteGameState(roomCode);
+    // PostgreSQL removed - no cleanup needed
   }
 }
 

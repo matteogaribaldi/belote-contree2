@@ -1,7 +1,6 @@
 const TariboDeck = require('./TariboDeck');
 const TariboGameLogic = require('./TariboGameLogic');
 const TariboBotPlayer = require('./TariboBotPlayer');
-const { createGame, updateGamePlayers, endGame } = require('../database/db');
 
 class TariboRoomManager {
   constructor(io) {
@@ -76,8 +75,6 @@ class TariboRoomManager {
     socket.emit('taribo:roomCreated', { roomCode, playerName });
 
     console.log(`✅ [Taribo] Stanza creata: ${roomCode} da ${playerName}`);
-
-    await createGame(roomCode, creatorIp);
 
     this.broadcastRoomState(roomCode);
     this.broadcastActiveRooms();
@@ -183,14 +180,6 @@ class TariboRoomManager {
 
     this.broadcastRoomState(roomCode);
     this.broadcastActiveRooms();
-
-    const playerMap = {
-      N: this.getPlayerName(room, 'north'),
-      E: this.getPlayerName(room, 'east'),
-      S: this.getPlayerName(room, 'south'),
-      W: this.getPlayerName(room, 'west')
-    };
-    await updateGamePlayers(roomCode, playerMap, room.bots);
 
     this.initializeGame(room);
 
@@ -608,14 +597,6 @@ class TariboRoomManager {
       room.game.winner = room.gameScore.northSouth >= targetScore ? 'northSouth' : 'eastWest';
       console.log(`[Taribo] GAME OVER! Winner: ${room.game.winner}`);
 
-      const winningTeam = room.game.winner === 'northSouth' ? 'NS' : 'EW';
-      await endGame(
-        room.code,
-        winningTeam,
-        room.gameScore.northSouth,
-        room.gameScore.eastWest,
-        room.handHistory.length
-      );
     }
 
     this.broadcastGameState(room.code);
