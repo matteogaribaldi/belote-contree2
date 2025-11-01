@@ -3,7 +3,16 @@ const GameLogic = require('./GameLogic');
 const BotPlayer = require('./BotPlayer');
 const AdvancedBotPlayer = require('./AdvancedBotPlayer');
 const { saveGame } = require('./database');
-const { createGame, updateGamePlayers, endGame } = require('../database/db');
+const {
+  createGame,
+  updateGamePlayers,
+  endGame,
+  upsertGameState,
+  getGameState,
+  getActiveGameStates,
+  cleanupExpiredStates,
+  deleteGameState
+} = require('../database/db');
 
 class RoomManager {
   constructor(io) {
@@ -26,11 +35,8 @@ class RoomManager {
   }
 
   async createRoom(socket, roomName) {
-    console.log('📝 createRoom called:', { socketId: socket.id, roomName });
-
     const roomCode = this.generateRoomCode();
     const creatorIp = socket.handshake.address;
-    console.log('✅ Creating new room:', { roomCode, creatorIp, roomName });
 
     const room = {
       code: roomCode,
@@ -65,11 +71,9 @@ class RoomManager {
     };
 
     this.rooms.set(roomCode, room);
-
-    console.log('🚀 Emitting roomCreated event:', { roomCode, roomName, socketId: socket.id });
     socket.emit('roomCreated', { roomCode, roomName });
 
-    console.log(`✅ Stanza creata: ${roomCode} con nome "${roomName}"`);
+    console.log(`✅ Stanza creata: ${roomCode}`);
 
     // Salva la creazione della partita nel database PostgreSQL
     await createGame(roomCode, creatorIp);
@@ -114,7 +118,6 @@ class RoomManager {
     // Se non c'è host o l'host è disconnesso, il nuovo giocatore diventa host
     if (!room.host || !hasRealPlayers || hostDisconnected) {
       room.host = socket.id;
-      console.log(`${playerName} è il nuovo host della stanza ${roomCode} (${!room.host ? 'primo giocatore' : hostDisconnected ? 'host precedente disconnesso' : 'nessun altro giocatore presente'})`);
     }
 
     this.playerRooms.set(socket.id, roomCode);
@@ -125,8 +128,6 @@ class RoomManager {
 
     this.broadcastRoomState(roomCode);
     this.broadcastActiveRooms();
-
-    console.log(`${playerName} si è unito alla stanza ${roomCode}`);
   }
 
   choosePosition(socket, roomCode, position) {
@@ -310,6 +311,7 @@ room.game = {
       room.game.turnStartTime = Date.now();
 
       this.broadcastGameState(room.code);
+      this.saveGameState(room.code); // Save after surcontre closes bidding
 
       // Avvia timer per il giocatore che inizia a giocare
       this.startTurnTimer(room.code, room.game.currentPlayer);
@@ -354,6 +356,7 @@ room.game = {
     room.game.turnStartTime = Date.now();
 
     this.broadcastGameState(room.code);
+    this.saveGameState(room.code); // Save after 3 passes close bidding
 
     // Avvia timer per il giocatore che inizia a giocare
     this.startTurnTimer(room.code, room.game.currentPlayer);
@@ -374,6 +377,7 @@ room.game = {
     room.game.currentPlayer = this.gameLogic.getNextPlayer(room.game.currentPlayer);
     room.game.turnStartTime = Date.now();
     this.broadcastGameState(room.code);
+    this.saveGameState(room.code); // Save after each bid
 
     // Avvia timer per il prossimo giocatore
     this.startTurnTimer(room.code, room.game.currentPlayer);
@@ -492,8 +496,6 @@ playCard(socket, roomCode, card, botPosition = null) {
     const hand = room.game.hands[position];
     const cardIndex = hand.findIndex(c => c.suit === card.suit && c.rank === card.rank);
 
-    console.log(`playCard: ${position} gioca ${card.rank} di ${card.suit}, carte rimanenti: ${hand.length}`);
-
     if (cardIndex === -1) {
       console.log(`ERRORE: Carta non trovata in mano! ${position} cercava ${card.rank} di ${card.suit}`);
       return;
@@ -554,16 +556,13 @@ playCard(socket, roomCode, card, botPosition = null) {
       }
     }
 
-    console.log(`Dopo rimozione: ${position} ha ${hand.length} carte rimanenti`);
-    console.log(`Trick corrente ha ${Object.keys(room.game.currentTrick).length} carte`);
-
     if (Object.keys(room.game.currentTrick).length === 4) {
-  console.log('Trick completo, chiamando completeTrick');
   this.completeTrick(room);
 } else {
   room.game.currentPlayer = this.gameLogic.getNextPlayer(room.game.currentPlayer);
   room.game.turnStartTime = Date.now();
   this.broadcastGameState(room.code);
+  this.saveGameState(room.code); // Save after each card played
 
   // Avvia timer per il prossimo giocatore
   this.startTurnTimer(room.code, room.game.currentPlayer);
@@ -576,9 +575,6 @@ playCard(socket, roomCode, card, botPosition = null) {
   }
 
 completeTrick(room) {
-  console.log('=== COMPLETE TRICK CHIAMATO ===');
-  console.log('Trick corrente:', room.game.currentTrick);
-
   const leadPlayer = Object.keys(room.game.currentTrick)[0];
   const leadCard = room.game.currentTrick[leadPlayer];
   const winner = this.gameLogic.determineWinner(room.game.currentTrick, room.game.trump, leadCard.suit);
@@ -595,13 +591,6 @@ completeTrick(room) {
 
   // Controlla se è l'ultimo trick (mani vuote)
   const handsEmpty = Object.values(room.game.hands).every(hand => hand.length === 0);
-  console.log('Mani vuote?', handsEmpty);
-  console.log('Carte rimanenti per posizione:', {
-    north: room.game.hands.north.length,
-    east: room.game.hands.east.length,
-    south: room.game.hands.south.length,
-    west: room.game.hands.west.length
-  });
 
   // Blocca le giocate durante la visualizzazione del trick
   room.game.trickDisplaying = true;
@@ -621,6 +610,7 @@ completeTrick(room) {
       this.endHand(room);
     } else {
       this.broadcastGameState(room.code);
+      this.saveGameState(room.code); // Save after trick completed
 
       // Avvia timer per il vincitore del trick
       this.startTurnTimer(room.code, room.game.currentPlayer);
@@ -631,8 +621,6 @@ completeTrick(room) {
       }
     }
   }, 3000);
-
-  console.log('=== FINE COMPLETE TRICK ===');
 }
 
 
@@ -798,10 +786,7 @@ completeTrick(room) {
   }
 
  botBid(room, position) {
-  console.log(`botBid chiamato per posizione: ${position}`);
-
   if (!this.isBot(room, position)) {
-    console.log(`${position} non è un bot!`);
     return;
   }
 
@@ -809,9 +794,7 @@ completeTrick(room) {
   const currentBid = [...room.game.bids].reverse().find(b => b.bid.type === 'bid');
   const allBids = room.game.bids; // Passa tutte le puntate per analisi
 
-  console.log(`Bot ${position} sta facendo bid...`);
   const bid = this.botPlayer.makeBid(hand, currentBid, position, allBids, room.game);
-  console.log(`Bot ${position} ha scelto:`, bid);
 
   this.placeBid({ id: 'bot' }, room.code, bid, position);
  }
@@ -830,7 +813,6 @@ completeTrick(room) {
       if (hasKing && hasQueen) {
         // Bot dichiara automaticamente la belote
         room.game.beloteDeclared[position] = true;
-        console.log(`Bot ${position} dichiara la belote automaticamente`);
       }
     }
 
@@ -1010,11 +992,8 @@ completeTrick(room) {
         const disconnectKey = `${roomCode}-${position}`;
         const playerName = room.playerNames[socket.id];
 
-        console.log(`Giocatore ${position} (${playerName}) disconnesso dalla stanza ${roomCode}. Attesa riconnessione...`);
-
         // Imposta timeout per convertire in bot dopo 60 secondi
         const timeout = setTimeout(() => {
-          console.log(`Timeout scaduto. ${position} convertito in bot nella stanza ${roomCode}`);
 
           room.bots[position] = true;
           room.disconnectedStatus[position] = false;
@@ -1070,8 +1049,6 @@ completeTrick(room) {
           const newHost = Object.values(room.players).find(player => player !== null && !player.startsWith('bot-'));
           if (newHost) {
             room.host = newHost;
-            const newHostName = room.playerNames[newHost] || 'Giocatore';
-            console.log(`${newHostName} è il nuovo host della stanza ${roomCode}`);
           }
         }
 
@@ -1253,8 +1230,6 @@ completeTrick(room) {
       socket.emit('error', { message: 'Non puoi cancellare il tavolo durante una partita' });
       return;
     }
-
-    console.log(`Stanza ${roomCode} cancellata dall'host`);
 
     // Rimuovi tutti i giocatori dalla stanza
     for (let pos in room.players) {
@@ -1452,6 +1427,100 @@ completeTrick(room) {
         this.playCard({ id: 'timeout' }, roomCode, card, position);
       }
     }
+  }
+
+  // ==========================================
+  // GAME STATE PERSISTENCE & RECOVERY
+  // ==========================================
+
+  /**
+   * Save game state to database with debouncing
+   * Called after critical game events (bid, card play, trick completion)
+   */
+  async saveGameState(roomCode) {
+    const room = this.rooms.get(roomCode);
+    if (!room || !room.game || room.state !== 'playing') return;
+
+    // Clear existing timeout
+    if (room.saveTimeout) {
+      clearTimeout(room.saveTimeout);
+    }
+
+    // Debounce: wait 300ms before saving
+    room.saveTimeout = setTimeout(async () => {
+      try {
+        const roomMetadata = {
+          code: room.code,
+          name: room.name,
+          host: room.host,
+          players: room.players,
+          bots: room.bots,
+          disconnectedStatus: room.disconnectedStatus,
+          playerNames: room.playerNames,
+          botCounter: room.botCounter,
+          state: room.state,
+          gameScore: room.gameScore,
+          targetScore: room.targetScore,
+          advancedBotAI: room.advancedBotAI,
+          handHistory: room.handHistory
+        };
+
+        await upsertGameState(roomCode, room.game, roomMetadata, room.gameId);
+      } catch (error) {
+        // Error already logged in upsertGameState, game continues
+      }
+    }, 300);
+  }
+
+  /**
+   * Recover all active games from database on server restart
+   * Called during server initialization
+   */
+  async recoverActiveGames() {
+    try {
+      const activeStates = await getActiveGameStates();
+
+      if (activeStates.length === 0) {
+        console.log('ℹ️  No active games to recover');
+        return;
+      }
+
+      console.log(`♻️  Recovering ${activeStates.length} active game(s)...`);
+
+      for (const state of activeStates) {
+        try {
+          const room = {
+            ...state.roomMetadata,
+            game: state.gameState,
+            saveTimeout: null
+          };
+
+          this.rooms.set(room.code, room);
+          console.log(`   ✓ Recovered game: ${room.code} (last updated: ${state.lastUpdated})`);
+        } catch (error) {
+          console.error(`   ✗ Failed to recover game ${state.roomCode}:`, error.message);
+        }
+      }
+
+      console.log(`♻️  Game recovery complete: ${this.rooms.size} room(s) in memory`);
+    } catch (error) {
+      console.error('⚠ Cannot recover games (starting fresh):', error.message);
+    }
+  }
+
+  /**
+   * Clean up expired game states periodically
+   * Should be called via cron job or interval
+   */
+  async cleanupExpired() {
+    await cleanupExpiredStates();
+  }
+
+  /**
+   * Delete game state when game ends normally
+   */
+  async removeGameState(roomCode) {
+    await deleteGameState(roomCode);
   }
 }
 

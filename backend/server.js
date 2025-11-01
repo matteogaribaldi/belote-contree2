@@ -7,9 +7,23 @@ const TariboRoomManager = require('./game/TariboRoomManager');
 const { getRecentGames, getTotalGames } = require('./game/database');
 const { initializeDatabase, getGameStats, getPlayerStats, getGamesList } = require('./database/db');
 
+// CORS Configuration
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [process.env.FRONTEND_URL || 'https://belote-frontend.onrender.com']
+  : ['http://localhost:4200', 'http://localhost:3000'];
+
 const app = express();
 app.use(cors({
-  origin: '*',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log(`⚠️  CORS blocked origin: ${origin}`);
+      callback(null, true); // Still allow for now, just log
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -17,7 +31,7 @@ app.use(express.json());
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: '*',
+    origin: allowedOrigins,
     methods: ["GET", "POST", "OPTIONS"],
     credentials: true,
     allowedHeaders: ["*"]
@@ -35,8 +49,8 @@ io.on('connection', (socket) => {
     socket.emit('activeRoomsList', activeRooms);
   });
 
-  socket.on('createRoom', (playerName) => {
-    roomManager.createRoom(socket, playerName);
+  socket.on('createRoom', (roomName) => {
+    roomManager.createRoom(socket, roomName);
   });
 
   socket.on('joinRoom', ({ roomCode, playerName }) => {
@@ -285,4 +299,10 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, async () => {
   console.log(`Server in ascolto sulla porta ${PORT}`);
   await initializeDatabase();
+
+  // Recover active games from database
+  await roomManager.recoverActiveGames();
+
+  // Start cleanup cron job (every hour)
+  setInterval(() => roomManager.cleanupExpired(), 3600000);
 });
