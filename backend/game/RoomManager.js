@@ -93,6 +93,27 @@ class RoomManager {
       return;
     }
 
+    // Leave dalla room precedente se il socket è già in un'altra room
+    const previousRoomCode = this.playerRooms.get(socket.id);
+    if (previousRoomCode && previousRoomCode !== roomCode) {
+      console.log(`Socket ${socket.id} sta lasciando la room precedente ${previousRoomCode}`);
+      socket.leave(previousRoomCode);
+
+      // Cleanup dalla room precedente se necessario
+      const previousRoom = this.rooms.get(previousRoomCode);
+      if (previousRoom) {
+        // Rimuovi il giocatore dalle posizioni della room precedente
+        for (let pos in previousRoom.players) {
+          if (previousRoom.players[pos] === socket.id) {
+            previousRoom.players[pos] = null;
+          }
+        }
+        // Rimuovi il nome del giocatore
+        delete previousRoom.playerNames[socket.id];
+        this.broadcastRoomState(previousRoomCode);
+      }
+    }
+
     // Controlla se ci sono giocatori reali nella stanza (escludendo chi si sta connettendo)
     const hasRealPlayers = Object.values(room.players).some(player =>
       player !== null &&
@@ -954,6 +975,13 @@ completeTrick(room) {
         // Se era l'host, ripristina lo stato di host
         if (disconnectedData.wasHost) {
           room.host = socket.id;
+        }
+
+        // Leave dalla room precedente se il socket è già in un'altra room
+        const previousRoomCode = this.playerRooms.get(socket.id);
+        if (previousRoomCode && previousRoomCode !== roomCode) {
+          console.log(`Socket ${socket.id} sta lasciando la room precedente ${previousRoomCode} per riconnettersi a ${roomCode}`);
+          socket.leave(previousRoomCode);
         }
 
         room.players[pos] = socket.id;

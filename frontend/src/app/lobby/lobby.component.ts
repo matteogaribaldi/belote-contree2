@@ -93,6 +93,8 @@ export class LobbyComponent implements OnInit {
   confirmCreateRoom() {
     this.isCreatingRoom = true;
     this.showConfirmCreateModal = false;
+    // Cancella sessione precedente prima di creare una nuova room
+    this.socketService.clearGameSession();
     this.socketService.createRoom(this.roomName.trim());
   }
 
@@ -114,6 +116,8 @@ export class LobbyComponent implements OnInit {
 
   joinRoomWithPlayerName() {
     if (this.playerName.trim() && this.selectedRoomCode) {
+      // Cancella sessione precedente prima di joinare una nuova room
+      this.socketService.clearGameSession();
       this.socketService.joinRoom(this.selectedRoomCode, this.playerName.trim());
       this.closePlayerNameModal();
     } else {

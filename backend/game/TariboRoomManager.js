@@ -67,6 +67,26 @@ class TariboRoomManager {
     };
 
     this.rooms.set(roomCode, room);
+
+    // Leave dalla room precedente se il socket è già in un'altra room
+    const previousRoomCode = this.playerRooms.get(socket.id);
+    if (previousRoomCode && previousRoomCode !== roomCode) {
+      console.log(`[Taribo] Socket ${socket.id} sta lasciando la room precedente ${previousRoomCode}`);
+      socket.leave(previousRoomCode);
+
+      // Cleanup dalla room precedente
+      const previousRoom = this.rooms.get(previousRoomCode);
+      if (previousRoom) {
+        for (let pos in previousRoom.players) {
+          if (previousRoom.players[pos] === socket.id) {
+            previousRoom.players[pos] = null;
+          }
+        }
+        delete previousRoom.playerNames[socket.id];
+        this.broadcastRoomState(previousRoomCode);
+      }
+    }
+
     this.playerRooms.set(socket.id, roomCode);
     room.playerNames[socket.id] = playerName;
 
@@ -114,6 +134,25 @@ class TariboRoomManager {
     if (!hasRealPlayers || hostDisconnected) {
       room.host = socket.id;
       console.log(`[Taribo] ${playerName} è il nuovo host della stanza ${roomCode}`);
+    }
+
+    // Leave dalla room precedente se il socket è già in un'altra room
+    const previousRoomCode = this.playerRooms.get(socket.id);
+    if (previousRoomCode && previousRoomCode !== roomCode) {
+      console.log(`[Taribo] Socket ${socket.id} sta lasciando la room precedente ${previousRoomCode}`);
+      socket.leave(previousRoomCode);
+
+      // Cleanup dalla room precedente
+      const previousRoom = this.rooms.get(previousRoomCode);
+      if (previousRoom) {
+        for (let pos in previousRoom.players) {
+          if (previousRoom.players[pos] === socket.id) {
+            previousRoom.players[pos] = null;
+          }
+        }
+        delete previousRoom.playerNames[socket.id];
+        this.broadcastRoomState(previousRoomCode);
+      }
     }
 
     this.playerRooms.set(socket.id, roomCode);
@@ -1061,6 +1100,13 @@ class TariboRoomManager {
 
         if (disconnectedData.wasHost) {
           room.host = socket.id;
+        }
+
+        // Leave dalla room precedente se il socket è già in un'altra room
+        const previousRoomCode = this.playerRooms.get(socket.id);
+        if (previousRoomCode && previousRoomCode !== roomCode) {
+          console.log(`[Taribo] Socket ${socket.id} sta lasciando la room precedente ${previousRoomCode} per riconnettersi a ${roomCode}`);
+          socket.leave(previousRoomCode);
         }
 
         room.players[pos] = socket.id;

@@ -73,6 +73,8 @@ export class TariboLobbyComponent implements OnInit {
     if (this.playerName.trim()) {
       this.isCreatingRoom = true;
       localStorage.setItem('belote_playerName', this.playerName.trim());
+      // Cancella sessione precedente prima di creare una nuova room
+      this.socketService.clearTariboGameSession();
       this.socketService.createTariboRoom(this.playerName.trim());
     } else {
       this.showError('Inserisci il tuo nome prima di creare una partita');
@@ -82,6 +84,8 @@ export class TariboLobbyComponent implements OnInit {
   joinRoom() {
     if (this.playerName.trim()) {
       localStorage.setItem('belote_playerName', this.playerName.trim());
+      // Cancella sessione precedente prima di joinare una nuova room
+      this.socketService.clearTariboGameSession();
       // Se c'è una stanza disponibile, entra automaticamente in quella
       if (this.activeRooms.length > 0) {
         this.socketService.joinTariboRoom(this.activeRooms[0].code, this.playerName.trim());
@@ -106,6 +110,8 @@ export class TariboLobbyComponent implements OnInit {
   joinActiveRoom(roomCode: string) {
     if (this.playerName.trim()) {
       localStorage.setItem('belote_playerName', this.playerName.trim());
+      // Cancella sessione precedente prima di joinare una nuova room
+      this.socketService.clearTariboGameSession();
       this.socketService.joinTariboRoom(roomCode, this.playerName.trim());
     } else {
       this.showError('Inserisci il tuo nome prima di unirti a una partita');

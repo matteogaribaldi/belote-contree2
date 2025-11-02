@@ -95,6 +95,10 @@ export class SocketService {
     localStorage.removeItem('belote_game');
   }
 
+  clearTariboGameSession() {
+    localStorage.removeItem('belote_taribo_game');
+  }
+
   onReconnected(): Observable<any> {
     return new Observable(observer => {
       const handler = (data: any) => observer.next(data);
