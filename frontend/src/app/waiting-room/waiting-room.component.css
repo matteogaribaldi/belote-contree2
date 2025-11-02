@@ -218,6 +218,19 @@
   transform: scale(1.05);
 }
 
+.btn-close {
+  background: #FF9800;
+  color: white;
+  font-size: 16px;
+  padding: 12px 30px;
+  margin-top: 10px;
+}
+
+.btn-close:hover {
+  background: #F57C00;
+  transform: scale(1.05);
+}
+
 /* Notification styles */
 .notification {
   position: fixed;

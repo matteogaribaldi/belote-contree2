@@ -65,33 +65,22 @@ class GameLogic {
       return false;
     }
 
-    // Se seguo il seme di atout, devo surclassare se posso
+    // Se seguo il seme di atout, devo SEMPRE surclassare se posso
+    // (non si applica l'eccezione del partner vincente quando SEGUI l'atout)
     if (hasSuit && leadSuit === trump && card.suit === trump) {
-      const players = Object.keys(trick);
-      const leadPlayer = players[0];
-      const partner = this.getPartner(currentPlayer);
-      const partnerWinning = this.isPartnerWinning(trick, trump, leadSuit, currentPlayer);
+      const trumpsInTrick = Object.values(trick).filter(c => c.suit === trump);
+      if (trumpsInTrick.length > 0) {
+        const highestTrump = trumpsInTrick.reduce((max, c) =>
+          this.deck.getCardOrder(c, trump) > this.deck.getCardOrder(max, trump) ? c : max
+        );
 
-      // Devo surclassare se:
-      // 1. Il partner NON sta vincendo, OPPURE
-      // 2. Il partner sta vincendo MA è lui che ha aperto (non posso pisser sul suo atout)
-      const mustSurpass = !partnerWinning || (partnerWinning && leadPlayer === partner);
+        const canSurpass = hand.some(c =>
+          c.suit === trump &&
+          this.deck.getCardOrder(c, trump) > this.deck.getCardOrder(highestTrump, trump)
+        );
 
-      if (mustSurpass) {
-        const trumpsInTrick = Object.values(trick).filter(c => c.suit === trump);
-        if (trumpsInTrick.length > 0) {
-          const highestTrump = trumpsInTrick.reduce((max, c) =>
-            this.deck.getCardOrder(c, trump) > this.deck.getCardOrder(max, trump) ? c : max
-          );
-
-          const canSurpass = hand.some(c =>
-            c.suit === trump &&
-            this.deck.getCardOrder(c, trump) > this.deck.getCardOrder(highestTrump, trump)
-          );
-
-          if (canSurpass && this.deck.getCardOrder(card, trump) <= this.deck.getCardOrder(highestTrump, trump)) {
-            return false;
-          }
+        if (canSurpass && this.deck.getCardOrder(card, trump) <= this.deck.getCardOrder(highestTrump, trump)) {
+          return false;
         }
       }
     }
@@ -106,8 +95,9 @@ class GameLogic {
         return false;
       }
 
-      // Se gioco atout, devo surclassare se posso (ma solo se il partner NON sta vincendo)
-      if (card.suit === trump && !partnerWinning) {
+      // Se gioco atout, devo SEMPRE surclassare se posso
+      // (indipendentemente dal fatto che il partner stia vincendo)
+      if (card.suit === trump) {
         const trumpsInTrick = Object.values(trick).filter(c => c.suit === trump);
         if (trumpsInTrick.length > 0) {
           const highestTrump = trumpsInTrick.reduce((max, c) =>

@@ -71,6 +71,10 @@ export class SocketService {
     this.socket.emit('deleteRoom', roomCode);
   }
 
+  closeRoom(roomCode: string) {
+    this.socket.emit('closeRoom', { roomCode });
+  }
+
   setTargetScore(roomCode: string, targetScore: number) {
     this.socket.emit('setTargetScore', { roomCode, targetScore });
   }
@@ -152,6 +156,14 @@ export class SocketService {
       const handler = (data: any) => observer.next(data);
       this.socket.on('roomDeleted', handler);
       return () => this.socket.off('roomDeleted', handler);
+    });
+  }
+
+  onRoomClosed(): Observable<any> {
+    return new Observable(observer => {
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('roomClosed', handler);
+      return () => this.socket.off('roomClosed', handler);
     });
   }
 

@@ -84,6 +84,14 @@ export class WaitingRoomComponent implements OnInit, OnDestroy {
     );
 
     this.subscriptions.push(
+      this.socketService.onRoomClosed().subscribe(data => {
+        this.showNotification(data.message, 'info');
+        this.socketService.clearGameSession();
+        setTimeout(() => this.router.navigate(['/']), 2000);
+      })
+    );
+
+    this.subscriptions.push(
       this.socketService.onError().subscribe(error => {
         console.error('Errore dalla stanza:', error);
         // Se la stanza non esiste, reindirizza alla lobby
@@ -176,6 +184,12 @@ export class WaitingRoomComponent implements OnInit, OnDestroy {
     if (confirm('Sei sicuro di voler cancellare il tavolo?')) {
       this.socketService.deleteRoom(this.roomCode);
       this.router.navigate(['/']);
+    }
+  }
+
+  closeRoom() {
+    if (confirm('Sei sicuro di voler chiudere il tavolo? Tutti i giocatori verranno disconnessi e la partita verrà cancellata.')) {
+      this.socketService.closeRoom(this.roomCode);
     }
   }
 

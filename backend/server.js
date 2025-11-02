@@ -100,6 +100,10 @@ io.on('connection', (socket) => {
     roomManager.setAdvancedBotAI(socket, roomCode, enabled);
   });
 
+  socket.on('closeRoom', ({ roomCode }) => {
+    roomManager.closeRoom(socket, roomCode);
+  });
+
   socket.on('reconnect', ({ roomCode, playerName }) => {
     roomManager.reconnectPlayer(socket, roomCode, playerName);
   });

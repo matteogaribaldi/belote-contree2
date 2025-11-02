@@ -2,6 +2,7 @@ const Deck = require('./Deck');
 const GameLogic = require('./GameLogic');
 const BotPlayer = require('./BotPlayer');
 const AdvancedBotPlayer = require('./AdvancedBotPlayer');
+const PersistenceManager = require('./PersistenceManager');
 const { saveGame } = require('./database');
 
 class RoomManager {
@@ -13,6 +14,7 @@ class RoomManager {
     this.gameLogic = new GameLogic();
     this.botPlayer = new BotPlayer(this.gameLogic);
     this.advancedBotPlayer = new AdvancedBotPlayer(this.gameLogic);
+    this.persistenceManager = new PersistenceManager();
     this.dealerRotation = ['north', 'east', 'south', 'west'];
     this.disconnectedPlayers = new Map(); // { roomCode-position: { playerName, timeout } }
     this.reconnectionTimeout = 60000; // 60 secondi
@@ -233,6 +235,9 @@ room.game = {
   this.logGameStart(room, hands, dealer, firstPlayer);
 
   this.broadcastGameState(room.code);
+
+  // Save initial game state (immediate)
+  this.persistenceManager.scheduleSave(room.code, room, 'game_started');
 
   // Avvia il timer per il primo giocatore
   this.startTurnTimer(room.code, firstPlayer);
@@ -540,7 +545,9 @@ playCard(socket, roomCode, card, botPosition = null) {
   room.game.currentPlayer = this.gameLogic.getNextPlayer(room.game.currentPlayer);
   room.game.turnStartTime = Date.now();
   this.broadcastGameState(room.code);
-  this.saveGameState(room.code); // Save after each card played
+
+  // Save game state after card played (100ms debounce)
+  this.persistenceManager.scheduleSave(room.code, room, 'card_played');
 
   // Avvia timer per il prossimo giocatore
   this.startTurnTimer(room.code, room.game.currentPlayer);
@@ -588,7 +595,9 @@ completeTrick(room) {
       this.endHand(room);
     } else {
       this.broadcastGameState(room.code);
-      this.saveGameState(room.code); // Save after trick completed
+
+      // Save game state after trick completed (immediate)
+      this.persistenceManager.scheduleSave(room.code, room, 'trick_completed');
 
       // Avvia timer per il vincitore del trick
       this.startTurnTimer(room.code, room.game.currentPlayer);
@@ -719,6 +728,9 @@ completeTrick(room) {
     }
 
     this.broadcastGameState(room.code);
+
+    // Save game state after hand ended (immediate)
+    this.persistenceManager.scheduleSave(room.code, room, 'hand_ended');
   }
 
   nextHand(socket, roomCode) {
@@ -1235,6 +1247,53 @@ completeTrick(room) {
     this.broadcastActiveRooms();
   }
 
+  closeRoom(socket, roomCode) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return;
+
+    // Verifica che il richiedente sia un giocatore umano nella room
+    const position = this.getPlayerPosition(room, socket.id);
+    if (!position) {
+      socket.emit('error', { message: 'Non fai parte di questo tavolo' });
+      return;
+    }
+
+    // Cancella tutti i timer attivi per questa room
+    this.clearTurnTimer(roomCode);
+
+    // Rimuovi tutti i giocatori disconnessi in attesa di riconnessione
+    for (let pos in room.players) {
+      const disconnectKey = `${roomCode}-${pos}`;
+      const disconnectedData = this.disconnectedPlayers.get(disconnectKey);
+      if (disconnectedData) {
+        clearTimeout(disconnectedData.timeout);
+        this.disconnectedPlayers.delete(disconnectKey);
+      }
+    }
+
+    // Rimuovi la mappatura player-room per tutti i giocatori
+    for (let pos in room.players) {
+      const playerId = room.players[pos];
+      if (playerId && !playerId.startsWith('bot-')) {
+        this.playerRooms.delete(playerId);
+      }
+    }
+
+    // Rimuovi lo stato di gioco persistente
+    this.persistenceManager.removeGame(roomCode);
+
+    // Notifica tutti i client nella stanza che il tavolo è stato chiuso
+    this.io.to(roomCode).emit('roomClosed', { message: 'Il tavolo è stato chiuso' });
+
+    // Elimina la stanza
+    this.rooms.delete(roomCode);
+
+    console.log(`🚪 Tavolo ${roomCode} chiuso da ${room.playerNames[socket.id] || socket.id}`);
+
+    // Aggiorna la lista delle stanze attive
+    this.broadcastActiveRooms();
+  }
+
   // Helper: Log inizio partita con tutte le carte
   logGameStart(room, hands, dealer, firstPlayer) {
     console.log('\n' + '='.repeat(80));
@@ -1350,6 +1409,9 @@ completeTrick(room) {
       );
 
       console.log(`✅ Partita ${room.code} salvata nel database`);
+
+      // Remove active game state (game completed)
+      this.persistenceManager.removeGame(room.code);
     } catch (error) {
       console.error('❌ Errore nel salvare la partita nel database:', error);
     }
@@ -1441,7 +1503,11 @@ completeTrick(room) {
    * Should be called via cron job or interval
    */
   async cleanupExpired() {
-    // PostgreSQL removed - no cleanup needed
+    const { cleanupExpiredGames } = require('./database');
+    const deletedCount = cleanupExpiredGames(24); // Delete games older than 24 hours
+    if (deletedCount > 0) {
+      console.log(`🧹 Cleaned up ${deletedCount} expired game states`);
+    }
   }
 
   /**

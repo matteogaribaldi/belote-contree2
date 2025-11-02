@@ -209,6 +209,14 @@ this.subscriptions.push(
   })
 );
 
+this.subscriptions.push(
+  this.socketService.onRoomClosed().subscribe(data => {
+    console.log('Tavolo chiuso:', data);
+    this.socketService.clearGameSession();
+    this.router.navigate(['/']);
+  })
+);
+
   }
 
   ngOnDestroy() {
@@ -424,6 +432,12 @@ this.subscriptions.push(
 
   goHome() {
     window.location.href = '/';
+  }
+
+  closeRoom() {
+    if (confirm('Sei sicuro di voler chiudere il tavolo? Tutti i giocatori verranno disconnessi e la partita verrà cancellata.')) {
+      this.socketService.closeRoom(this.roomCode);
+    }
   }
 
   isDealer(position: string): boolean {
