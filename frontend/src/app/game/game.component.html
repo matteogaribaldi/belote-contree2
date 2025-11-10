@@ -245,8 +245,9 @@
           class="card"
           [class.red]="card.suit === 'hearts' || card.suit === 'diamonds'"
           [class.black]="card.suit === 'clubs' || card.suit === 'spades'"
-          [class.playable]="isMyTurn()"
-          (click)="playCard(card)"
+          [class.playable]="isMyTurn() && isCardPlayable(card)"
+          [class.unplayable]="isMyTurn() && !isCardPlayable(card)"
+          (click)="isCardPlayable(card) ? playCard(card) : null"
         >
           <div class="card-rank">{{ card.rank }}</div>
           <div class="card-suit">{{ getSuitSymbol(card.suit) }}</div>

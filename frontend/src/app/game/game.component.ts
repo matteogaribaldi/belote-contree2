@@ -571,4 +571,148 @@ this.subscriptions.push(
       alert(randomMessage);
     }
   }
+
+  // Helper methods for card validation
+  getCardOrder(card: any, trump: string): number {
+    const isTrump = card.suit === trump;
+
+    if (isTrump) {
+      const order: any = { 'J': 8, '9': 7, 'A': 6, '10': 5, 'K': 4, 'Q': 3, '8': 2, '7': 1 };
+      return order[card.rank];
+    } else {
+      const order: any = { 'A': 8, '10': 7, 'K': 6, 'Q': 5, 'J': 4, '9': 3, '8': 2, '7': 1 };
+      return order[card.rank];
+    }
+  }
+
+  getPartner(position: string): string {
+    const partners: any = {
+      north: 'south',
+      south: 'north',
+      east: 'west',
+      west: 'east'
+    };
+    return partners[position];
+  }
+
+  determineWinner(trick: any, trump: string, leadSuit: string): string | null {
+    const players = Object.keys(trick);
+    if (players.length === 0) return null;
+
+    let winningPlayer = players[0];
+    let winningCard = trick[winningPlayer];
+
+    for (let i = 1; i < players.length; i++) {
+      const player = players[i];
+      const card = trick[player];
+
+      // Trump batte sempre non-trump
+      if (card.suit === trump && winningCard.suit !== trump) {
+        winningCard = card;
+        winningPlayer = player;
+      }
+      // Entrambi trump o entrambi dello stesso seme
+      else if (card.suit === winningCard.suit) {
+        if (this.getCardOrder(card, trump) > this.getCardOrder(winningCard, trump)) {
+          winningCard = card;
+          winningPlayer = player;
+        }
+      }
+      // Se la carta vincente non è trump e la carta corrente è del seme di apertura
+      else if (winningCard.suit !== trump && card.suit === leadSuit) {
+        if (this.getCardOrder(card, trump) > this.getCardOrder(winningCard, trump)) {
+          winningCard = card;
+          winningPlayer = player;
+        }
+      }
+    }
+
+    return winningPlayer;
+  }
+
+  isPartnerWinning(trick: any, trump: string, leadSuit: string): boolean {
+    const players = Object.keys(trick);
+    if (players.length === 0) return false;
+
+    const partner = this.getPartner(this.gameState.position);
+
+    if (!trick[partner]) return false;
+
+    const winningPlayer = this.determineWinner(trick, trump, leadSuit);
+    return winningPlayer === partner;
+  }
+
+  isCardPlayable(card: any): boolean {
+    if (!this.gameState || this.gameState.biddingPhase) return true;
+    if (!this.isMyTurn()) return false;
+
+    const hand = this.gameState.hand;
+    const trick = this.gameState.currentTrick;
+    const trump = this.gameState.trump;
+
+    // Prima carta del trick
+    if (Object.keys(trick).length === 0) {
+      return true;
+    }
+
+    const leadCard = trick[Object.keys(trick)[0]];
+    const leadSuit = leadCard.suit;
+
+    // Devo seguire il seme se ce l'ho
+    const hasSuit = hand.some((c: any) => c.suit === leadSuit);
+    if (hasSuit && card.suit !== leadSuit) {
+      return false;
+    }
+
+    // Se seguo il seme di atout, devo SEMPRE surclassare se posso
+    if (hasSuit && leadSuit === trump && card.suit === trump) {
+      const trumpsInTrick = Object.values(trick).filter((c: any) => c.suit === trump);
+      if (trumpsInTrick.length > 0) {
+        const highestTrump = trumpsInTrick.reduce((max: any, c: any) =>
+          this.getCardOrder(c, trump) > this.getCardOrder(max, trump) ? c : max
+        );
+
+        const canSurpass = hand.some((c: any) =>
+          c.suit === trump &&
+          this.getCardOrder(c, trump) > this.getCardOrder(highestTrump, trump)
+        );
+
+        if (canSurpass && this.getCardOrder(card, trump) <= this.getCardOrder(highestTrump, trump)) {
+          return false;
+        }
+      }
+    }
+
+    // Se non ho il seme
+    if (!hasSuit) {
+      const hasTrump = hand.some((c: any) => c.suit === trump);
+      const partnerWinning = this.isPartnerWinning(trick, trump, leadSuit);
+
+      // Se ho atout e il partner non sta vincendo, devo giocare atout
+      if (hasTrump && !partnerWinning && card.suit !== trump) {
+        return false;
+      }
+
+      // Se gioco atout, devo SEMPRE surclassare se posso
+      if (card.suit === trump) {
+        const trumpsInTrick = Object.values(trick).filter((c: any) => c.suit === trump);
+        if (trumpsInTrick.length > 0) {
+          const highestTrump = trumpsInTrick.reduce((max: any, c: any) =>
+            this.getCardOrder(c, trump) > this.getCardOrder(max, trump) ? c : max
+          );
+
+          const canSurpass = hand.some((c: any) =>
+            c.suit === trump &&
+            this.getCardOrder(c, trump) > this.getCardOrder(highestTrump, trump)
+          );
+
+          if (canSurpass && this.getCardOrder(card, trump) <= this.getCardOrder(highestTrump, trump)) {
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  }
 }

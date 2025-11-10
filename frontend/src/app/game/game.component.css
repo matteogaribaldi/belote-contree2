@@ -535,6 +535,18 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
+.card.unplayable {
+  opacity: 0.4 !important;
+  filter: grayscale(70%) !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+.card.unplayable:hover {
+  transform: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
 .card-rank {
   font-size: 28px;
   font-weight: 900;
